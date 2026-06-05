@@ -29,7 +29,7 @@ func main() {
 	}
 
 	router := gin.Default()
-	routes.SetupRoutes(router)
+	routes.SetupRoutes(router, db)
 
 	port := os.Getenv("PORT")
 	if port == "" {
