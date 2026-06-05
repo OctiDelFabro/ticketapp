@@ -36,3 +36,12 @@ go run main.go
 ```
 
 Al iniciar, el backend conecta con MySQL usando las variables de entorno configuradas, ejecuta las migraciones GORM de los modelos `User`, `Event` y `Ticket`, y carga cuatro eventos iniciales si la tabla `events` está vacía.
+
+### Variables JWT
+
+El backend usa `JWT_SECRET` para firmar tokens y `JWT_EXPIRATION_HOURS` para configurar su expiración. Si `JWT_SECRET` no está definido, se usa una clave simple de desarrollo que debe cambiarse antes de producción.
+
+```env
+JWT_SECRET=super-secret-dev-key
+JWT_EXPIRATION_HOURS=24
+```
