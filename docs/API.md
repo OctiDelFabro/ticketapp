@@ -88,10 +88,79 @@ Autentica un usuario existente con email y contraseña.
 
 ## Eventos públicos
 
-Funcionalidades planificadas para una etapa posterior:
+Los endpoints públicos de eventos no requieren JWT y devuelven solamente eventos activos.
+
+### `GET /api/events`
+
+Lista el catálogo público de eventos activos.
+
+#### Query params opcionales
+
+- `search`: filtra por título usando coincidencia parcial.
+- `category`: filtra por categoría exacta.
+- `available_only`: si es `true`, devuelve solamente eventos con cupo disponible.
+
+#### Ejemplos
 
 - `GET /api/events`
-- `GET /api/events/:id`
+- `GET /api/events?search=rock`
+- `GET /api/events?category=Música`
+- `GET /api/events?available_only=true`
+
+#### Response `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Rock Nacional",
+    "description": "Evento de música rock nacional.",
+    "image_url": "",
+    "category": "Música",
+    "location": "Córdoba",
+    "start_date": "2026-09-12T21:00:00Z",
+    "duration_minutes": 120,
+    "capacity": 100,
+    "available_capacity": 100,
+    "active": true
+  }
+]
+```
+
+#### Errores
+
+- `400 Bad Request`: valor inválido para `available_only`.
+- `500 Internal Server Error`: error interno.
+
+### `GET /api/events/:id`
+
+Devuelve el detalle público de un evento activo.
+
+#### Response `200 OK`
+
+```json
+{
+  "id": 1,
+  "title": "Rock Nacional",
+  "description": "Evento de música rock nacional.",
+  "image_url": "",
+  "category": "Música",
+  "location": "Córdoba",
+  "start_date": "2026-09-12T21:00:00Z",
+  "duration_minutes": 120,
+  "capacity": 100,
+  "available_capacity": 100,
+  "active": true
+}
+```
+
+#### Errores
+
+- `400 Bad Request`: id inválido.
+- `404 Not Found`: el evento no existe o no está activo.
+- `500 Internal Server Error`: error interno.
+
+> `available_capacity` se calcula como `capacity` menos la cantidad de tickets asociados al evento con status `ACTIVE`.
 
 ## Cliente
 

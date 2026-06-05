@@ -8,8 +8,11 @@ import (
 
 func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	authController := controllers.NewAuthController(db)
+	eventController := controllers.NewEventController(db)
 
 	router.GET("/api/health", controllers.HealthCheck)
 	router.POST("/api/auth/register", authController.Register)
 	router.POST("/api/auth/login", authController.Login)
+	router.GET("/api/events", eventController.ListEvents)
+	router.GET("/api/events/:id", eventController.GetEventByID)
 }
