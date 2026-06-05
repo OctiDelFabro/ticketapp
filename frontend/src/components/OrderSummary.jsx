@@ -2,6 +2,8 @@ import { formatPrice, serviceFee } from '../data/mockData.js'
 import Button from './Button.jsx'
 
 export default function OrderSummary({ event, quantity, buttonText, onNext, onRemove }) {
+  const eventPath = event ? `/evento/${event.id}` : '/evento/arctic-monkeys'
+
   if (!event) {
     return (
       <aside className="glass-card sticky top-24 rounded-3xl p-5">
@@ -10,7 +12,7 @@ export default function OrderSummary({ event, quantity, buttonText, onNext, onRe
           Agregá una entrada desde el detalle del evento para continuar.
         </p>
         <div className="mt-6 grid gap-3">
-          <Button to="/evento/arctic-monkeys" className="w-full">Volver al evento</Button>
+          <Button to={eventPath} className="w-full">Volver al evento</Button>
           <Button to="/" variant="secondary" className="w-full">Ir al inicio</Button>
         </div>
       </aside>
