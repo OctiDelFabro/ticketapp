@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import EventCard from '../components/EventCard.jsx'
 import { events, formatPrice, getEventById, serviceFee } from '../data/mockData.js'
 
-export default function EventDetail() {
+export default function EventDetail({ onAddToCart }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [quantity, setQuantity] = useState(1)
@@ -22,10 +22,14 @@ export default function EventDetail() {
 
   const subtotal = event.price * quantity
   const fee = serviceFee(event.price, quantity)
+  const checkout = () => {
+    onAddToCart({ eventId: event.id, quantity })
+    navigate('/checkout')
+  }
 
   return (
-    <div className="app-shell bg-ticket-alt">
-      <div className="container-page py-6"><button onClick={() => navigate(-1)} className="rounded-2xl border border-ticket-border bg-ticket-card px-4 py-2 font-bold text-gray-200 transition hover:border-ticket-purple2">← Volver</button></div>
+    <div className="bg-ticket-alt">
+      <div className="container-page py-6"><button onClick={() => navigate('/')} className="rounded-2xl border border-ticket-border bg-ticket-card px-4 py-2 font-bold text-gray-200 transition hover:border-ticket-purple2">← Volver</button></div>
       <section className="relative -mt-20 h-[560px] overflow-hidden">
         <img src={event.image} alt={event.title} className="h-full w-full object-cover opacity-55" />
         <div className="absolute inset-0 bg-gradient-to-t from-ticket-alt via-ticket-alt/55 to-ticket-bg/40" />
@@ -50,7 +54,7 @@ export default function EventDetail() {
             <div className="mt-5 rounded-2xl border border-ticket-border bg-ticket-card2 p-4"><div className="flex justify-between"><div><p className="font-black">General</p><p className="text-sm text-gray-400">Acceso campo general</p></div><p className="text-xl font-black text-violet-200">{formatPrice(event.price)}</p></div></div>
             <div className="mt-5 flex items-center justify-between"><span className="font-bold">Cantidad</span><div className="flex items-center gap-3"><button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 rounded-full border border-ticket-border bg-ticket-card2 font-black">−</button><span className="w-8 text-center text-xl font-black">{quantity}</span><button onClick={() => setQuantity(Math.min(6, quantity + 1))} className="h-10 w-10 rounded-full border border-ticket-border bg-ticket-card2 font-black">+</button></div></div>
             <div className="my-6 space-y-3 border-y border-ticket-border py-5"><div className="flex justify-between text-gray-300"><span>General × {quantity}</span><span>{formatPrice(subtotal)}</span></div><div className="flex justify-between text-gray-300"><span>Cargo por servicio</span><span>{formatPrice(fee)}</span></div><div className="flex justify-between text-xl font-black"><span>Total</span><span>{formatPrice(subtotal + fee)}</span></div></div>
-            <Button to="/checkout" className="w-full">Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Reembolso garantizado</p>
+            <Button onClick={checkout} className="w-full">Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Reembolso garantizado</p>
           </aside>
         </div>
       </main>
