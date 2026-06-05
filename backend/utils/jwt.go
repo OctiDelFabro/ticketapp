@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -11,12 +12,14 @@ import (
 const defaultJWTSecret = "super-secret-dev-key"
 const defaultJWTExpirationHours = 24
 
-type AuthClaims struct {
+type JWTClaims struct {
 	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
+
+type AuthClaims = JWTClaims
 
 func GenerateToken(userID uint, email string, role string) (string, error) {
 	expirationHours := defaultJWTExpirationHours
@@ -27,12 +30,7 @@ func GenerateToken(userID uint, email string, role string) (string, error) {
 		}
 	}
 
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = defaultJWTSecret
-	}
-
-	claims := AuthClaims{
+	claims := JWTClaims{
 		UserID: userID,
 		Email:  email,
 		Role:   role,
@@ -42,5 +40,37 @@ func GenerateToken(userID uint, email string, role string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(getJWTSecret()))
+}
+
+func ValidateToken(tokenString string) (*JWTClaims, error) {
+	claims := &JWTClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid token signing method")
+		}
+
+		return []byte(getJWTSecret()), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if token == nil || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	if claims.ExpiresAt == nil {
+		return nil, errors.New("token expiration is required")
+	}
+
+	return claims, nil
+}
+
+func getJWTSecret() string {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return defaultJWTSecret
+	}
+
+	return secret
 }
