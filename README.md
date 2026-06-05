@@ -34,3 +34,5 @@ cd backend
 go mod tidy
 go run main.go
 ```
+
+Al iniciar, el backend conecta con MySQL usando las variables de entorno configuradas, ejecuta las migraciones GORM de los modelos `User`, `Event` y `Ticket`, y carga cuatro eventos iniciales si la tabla `events` está vacía.
