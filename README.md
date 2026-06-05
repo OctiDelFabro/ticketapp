@@ -26,3 +26,11 @@ ticketapp/
 ├── .gitignore
 └── README.md
 ```
+
+## Backend - ejecución local
+
+```bash
+cd backend
+go mod tidy
+go run main.go
+```
