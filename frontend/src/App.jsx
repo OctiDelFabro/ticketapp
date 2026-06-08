@@ -8,14 +8,13 @@ import EventDetail from './pages/EventDetail.jsx'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import MyTickets from './pages/MyTickets.jsx'
+import { isAuthenticated } from './utils/auth.js'
 import { getStoredCart, saveStoredCart } from './utils/cart.js'
-
-const getInitialLogin = () => localStorage.getItem('ticketapp_isLoggedIn') === 'true'
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [cartItem, setCartItem] = useState(getStoredCart)
-  const [isLoggedIn, setIsLoggedIn] = useState(getInitialLogin)
+  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated)
 
   useEffect(() => {
     saveStoredCart(cartItem)
