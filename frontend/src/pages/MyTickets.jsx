@@ -1,23 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button.jsx'
 import TicketCard from '../components/TicketCard.jsx'
-import { events } from '../data/mockData.js'
-
-const tickets = {
-  upcoming: [
-    { event: 'Arctic Monkeys', date: '15 Jul 2026', time: '21:00 hs', venue: 'Estadio Unico La Plata', code: 'TICKETAPP-2026-AM-0047819', quantity: 2, type: 'General', image: events[0].image },
-    { event: 'Bad Bunny', date: '12 Ago 2026', time: '21:30 hs', venue: 'Estadio Monumental', code: 'TICKETAPP-2026-BB-1029481', quantity: 1, type: 'General', image: events[4].image },
-  ],
-  past: [
-    { event: 'Bizarrap Music Sessions', date: '20 Mar 2026', time: '20:30 hs', venue: 'Movistar Arena', code: 'TICKETAPP-2026-BZ-3819201', quantity: 2, type: 'General', image: events[1].image },
-    { event: 'Hernan Cattaneo', date: '2 Feb 2026', time: '23:00 hs', venue: 'Mandarine Park', code: 'TICKETAPP-2026-HC-1928301', quantity: 4, type: 'General', image: events[3].image },
-  ],
-}
+import { cancelTicket, getMyTickets, transferTicket } from '../services/api.js'
+import { getStoredUser } from '../utils/auth.js'
 
 export default function MyTickets({ isLoggedIn }) {
-  const [tab, setTab] = useState('upcoming')
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
   const navigate = useNavigate()
+  const user = getStoredUser()
+
+  const loadTickets = async () => {
+    if (!isLoggedIn) return
+    setLoading(true)
+    setError('')
+    try {
+      const data = await getMyTickets()
+      setTickets(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadTickets()
+  }, [isLoggedIn])
+
+  const initials = useMemo(() => {
+    const name = user?.name || user?.email || 'TU'
+    return name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+  }, [user])
+
+  const handleCancel = async (ticketId) => {
+    setActionError('')
+    try {
+      await cancelTicket(ticketId)
+      await loadTickets()
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
+
+  const handleTransfer = async (ticketId, targetEmail) => {
+    setActionError('')
+    try {
+      await transferTicket(ticketId, targetEmail)
+      await loadTickets()
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
 
   if (!isLoggedIn) {
     return (
@@ -42,20 +79,27 @@ export default function MyTickets({ isLoggedIn }) {
         <button onClick={() => navigate('/')} className="mb-6 font-bold text-gray-300 hover:text-white">← Inicio</button>
         <section className="glass-card rounded-3xl p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="grid h-20 w-20 place-items-center rounded-3xl bg-ticket-purple text-2xl font-black shadow-glow">JP</div>
+            <div className="grid h-20 w-20 place-items-center rounded-3xl bg-ticket-purple text-2xl font-black shadow-glow">{initials}</div>
             <div>
               <p className="text-gray-400">Bienvenido de vuelta</p>
-              <h1 className="text-3xl font-black">Juan Perez</h1>
-              <p className="text-violet-200">juan.perez@email.com</p>
+              <h1 className="text-3xl font-black">{user?.name ?? 'Usuario TicketApp'}</h1>
+              <p className="text-violet-200">{user?.email}</p>
             </div>
           </div>
         </section>
         <div className="mt-8 flex gap-3 rounded-2xl border border-ticket-border bg-ticket-card p-2 sm:w-fit">
-          <button onClick={() => setTab('upcoming')} className={`flex-1 rounded-xl px-5 py-3 font-black transition sm:flex-none ${tab === 'upcoming' ? 'bg-ticket-purple text-white shadow-glow' : 'text-gray-400 hover:text-white'}`}>Próximas 2</button>
-          <button onClick={() => setTab('past')} className={`flex-1 rounded-xl px-5 py-3 font-black transition sm:flex-none ${tab === 'past' ? 'bg-ticket-purple text-white shadow-glow' : 'text-gray-400 hover:text-white'}`}>Pasadas 2</button>
+          <div className="rounded-xl bg-ticket-purple px-5 py-3 font-black text-white shadow-glow">Mis entradas {tickets.length}</div>
         </div>
+        {error && <div className="mt-6 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">{error}</div>}
+        {actionError && <div className="mt-6 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">{actionError}</div>}
         <section className="mt-6 space-y-5">
-          {tickets[tab].map((ticket) => <TicketCard key={ticket.code} ticket={ticket} />)}
+          {loading ? (
+            <div className="rounded-3xl border border-ticket-border bg-ticket-card p-10 text-center text-gray-400">Cargando entradas...</div>
+          ) : tickets.length ? (
+            tickets.map((ticket) => <TicketCard key={ticket.id} ticket={ticket} onCancel={handleCancel} onTransfer={handleTransfer} />)
+          ) : (
+            <div className="rounded-3xl border border-ticket-border bg-ticket-card p-10 text-center text-gray-400">Todavía no tenés entradas.</div>
+          )}
         </section>
       </main>
     </div>

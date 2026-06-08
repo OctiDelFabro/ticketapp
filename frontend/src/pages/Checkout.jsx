@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button.jsx'
 import CheckoutProgress from '../components/CheckoutProgress.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
-import { formatPrice, getEventById, serviceFee } from '../data/mockData.js'
+import { purchaseTicket } from '../services/api.js'
+import { getStoredUser, isAuthenticated } from '../utils/auth.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phonePattern = /^\+?[\d\s]{8,20}$/
@@ -11,25 +12,30 @@ const phonePattern = /^\+?[\d\s]{8,20}$/
 export default function Checkout({ cartItem, setCartItem }) {
   const [step, setStep] = useState(1)
   const [payment, setPayment] = useState('Crédito')
-  const [customer, setCustomer] = useState({ firstName: '', lastName: '', email: '', phone: '', dni: '' })
+  const storedUser = getStoredUser()
+  const [customer, setCustomer] = useState({ firstName: '', lastName: '', email: storedUser?.email ?? '', phone: '', dni: '' })
   const [card, setCard] = useState({ number: '', expiry: '', cvv: '', holder: '' })
   const [errors, setErrors] = useState({})
+  const [purchaseError, setPurchaseError] = useState('')
+  const [purchasing, setPurchasing] = useState(false)
+  const [confirmedTicket, setConfirmedTicket] = useState(null)
+  const [confirmedEvent, setConfirmedEvent] = useState(null)
   const navigate = useNavigate()
 
-  const event = cartItem?.event ?? getEventById(cartItem?.eventId)
+  const event = cartItem?.event
   const quantity = cartItem?.quantity ?? 1
-  const total = event ? event.price * quantity + serviceFee(event.price, quantity) : 0
-
-  const eventPath = event ? `/evento/${event.id}` : '/evento/arctic-monkeys'
+  const eventPath = event ? `/evento/${event.id}` : '/'
 
   const updateCustomer = (field, value) => {
     setCustomer((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
+    setPurchaseError('')
   }
 
   const updateCard = (field, value) => {
     setCard((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
+    setPurchaseError('')
   }
 
   const validateCustomer = () => {
@@ -53,12 +59,37 @@ export default function Checkout({ cartItem, setCartItem }) {
     return Object.keys(nextErrors).length === 0
   }
 
+  const confirmPurchase = async () => {
+    if (!isAuthenticated()) {
+      navigate('/login')
+      return
+    }
+
+    setPurchasing(true)
+    setPurchaseError('')
+    try {
+      const ticket = await purchaseTicket(event.id)
+      setConfirmedTicket(ticket)
+      setConfirmedEvent(event)
+      setCartItem(null)
+      setStep(4)
+    } catch (err) {
+      setPurchaseError(err.message)
+    } finally {
+      setPurchasing(false)
+    }
+  }
+
   const next = () => {
     if (!event) return
     if (step === 2 && !validateCustomer()) return
-    if (step === 3 && !validatePayment()) return
+    if (step === 3) {
+      if (!validatePayment()) return
+      confirmPurchase()
+      return
+    }
     setErrors({})
-    setStep((value) => Math.min(4, value + 1))
+    setStep((value) => Math.min(3, value + 1))
   }
 
   const goBack = () => {
@@ -67,11 +98,8 @@ export default function Checkout({ cartItem, setCartItem }) {
       return
     }
     setErrors({})
+    setPurchaseError('')
     setStep((value) => Math.max(1, value - 1))
-  }
-
-  const updateQuantity = (nextQuantity) => {
-    setCartItem((item) => item ? { ...item, quantity: nextQuantity } : item)
   }
 
   const removeCartItem = () => {
@@ -89,7 +117,7 @@ export default function Checkout({ cartItem, setCartItem }) {
           <h1 className="text-xl font-black">{event ? `${event.title} - TicketApp Checkout` : 'TicketApp Checkout'}</h1>
         </div>
         <CheckoutProgress currentStep={step} />
-        {!event ? (
+        {!event && step < 4 ? (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
             <section className="glass-card rounded-3xl p-6 sm:p-8">
               <h2 className="text-3xl font-black">Tu carrito está vacío</h2>
@@ -124,20 +152,9 @@ export default function Checkout({ cartItem, setCartItem }) {
                     <div className="mt-4 rounded-2xl border border-ticket-purple2 bg-ticket-purple/15 p-4">
                       <div className="flex justify-between">
                         <span className="font-black">General</span>
-                        <span className="font-black text-violet-200">{formatPrice(event.price)}</span>
+                        <span className="font-black text-violet-200">Entrada</span>
                       </div>
-                    </div>
-                    <h3 className="mt-6 font-black">Cantidad</h3>
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <button
-                          key={n}
-                          onClick={() => updateQuantity(n)}
-                          className={`h-12 w-12 rounded-2xl border font-black ${quantity === n ? 'border-ticket-purple bg-ticket-purple shadow-glow' : 'border-ticket-border bg-ticket-card2 text-gray-300'}`}
-                        >
-                          {n}
-                        </button>
-                      ))}
+                      <p className="mt-2 text-sm text-gray-400">El backend emite una entrada general por compra.</p>
                     </div>
                   </div>
                 </>
@@ -178,13 +195,14 @@ export default function Checkout({ cartItem, setCartItem }) {
                     </div>
                     <Field error={errors.holder}><input className={`input-dark ${errors.holder ? 'border-red-500' : ''}`} onChange={(event) => updateCard('holder', event.target.value)} placeholder="Titular de la tarjeta" value={card.holder} /></Field>
                   </form>
+                  {purchaseError && <div className="mt-5 rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{purchaseError}</div>}
                 </div>
               )}
             </section>
             <OrderSummary
               event={event}
               quantity={quantity}
-              buttonText={step === 3 ? 'Finalizar compra' : 'Continuar'}
+              buttonText={step === 3 ? (purchasing ? 'Confirmando...' : 'Finalizar compra') : 'Continuar'}
               onNext={next}
               onRemove={removeCartItem}
             />
@@ -193,15 +211,15 @@ export default function Checkout({ cartItem, setCartItem }) {
           <section className="mx-auto mt-10 max-w-2xl text-center">
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-ticket-purple text-5xl font-black shadow-glow">✓</div>
             <h2 className="mt-6 text-4xl font-black">¡Compra confirmada!</h2>
-            <p className="mt-3 text-gray-400">Recibirás la confirmación de tu compra en tu email.</p>
+            <p className="mt-3 text-gray-400">Tu entrada real ya está asociada a tu cuenta.</p>
             <div className="glass-card mt-8 rounded-3xl p-6 text-left">
               <div className="mt-6 grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
-                <p>Artista / evento: <b className="text-white">{event.title}</b></p>
-                <p>Fecha: <b className="text-white">{event.date}</b></p>
-                <p>Lugar: <b className="text-white">{event.venue}</b></p>
-                <p>Cantidad de entradas: <b className="text-white">{quantity}</b></p>
+                <p>Evento: <b className="text-white">{confirmedTicket?.event_title ?? confirmedEvent?.title}</b></p>
+                <p>Fecha: <b className="text-white">{confirmedEvent?.date}</b></p>
+                <p>Lugar: <b className="text-white">{confirmedTicket?.event_location ?? confirmedEvent?.venue}</b></p>
+                <p>Cantidad de entradas: <b className="text-white">1</b></p>
                 <p>Tipo de entrada: <b className="text-white">General</b></p>
-                <p className="sm:col-span-2">Total pagado: <b className="text-violet-200">{formatPrice(total)}</b></p>
+                <p className="sm:col-span-2">Estado: <b className="text-violet-200">{confirmedTicket?.status ?? 'ACTIVE'}</b></p>
               </div>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
