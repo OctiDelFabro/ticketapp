@@ -164,12 +164,158 @@ Devuelve el detalle público de un evento activo.
 
 ## Cliente
 
-Funcionalidades planificadas para una etapa posterior:
+Los endpoints de tickets requieren autenticación JWT. Enviar el token obtenido en `POST /api/auth/register` o `POST /api/auth/login` usando el header:
 
-- `POST /api/tickets/purchase`
-- `GET /api/tickets/me`
-- `PATCH /api/tickets/:id/cancel`
-- `PATCH /api/tickets/:id/transfer`
+```http
+Authorization: Bearer <token>
+```
+
+Si el header no existe, no usa el formato `Bearer <token>`, o el token es inválido/expiró, la API responde `401 Unauthorized`.
+
+### `POST /api/tickets/purchase`
+
+Compra una entrada para el usuario autenticado.
+
+#### Request
+
+```json
+{
+  "event_id": 1
+}
+```
+
+#### Response `201 Created`
+
+```json
+{
+  "id": 1,
+  "event_id": 1,
+  "event_title": "Rock Nacional",
+  "event_start_date": "2026-09-12T21:00:00Z",
+  "event_location": "Córdoba",
+  "status": "ACTIVE",
+  "purchase_date": "2026-06-05T12:00:00Z",
+  "user_id": 1,
+  "user_email": "ada@example.com"
+}
+```
+
+#### Reglas
+
+- `event_id` es requerido.
+- El evento debe existir y estar activo.
+- El usuario autenticado no puede tener otro ticket `ACTIVE` para el mismo evento.
+- Debe haber cupo disponible: `event.capacity - tickets ACTIVE del evento`.
+
+#### Errores
+
+- `400 Bad Request`: request inválido o `event_id` faltante.
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `404 Not Found`: el evento no existe o no está activo.
+- `409 Conflict`: no hay cupo o el usuario ya tiene un ticket activo para ese evento.
+- `500 Internal Server Error`: error interno.
+
+### `GET /api/tickets/me`
+
+Lista las entradas del usuario autenticado, ordenadas por `purchase_date` descendente.
+
+#### Response `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "event_id": 1,
+    "event_title": "Rock Nacional",
+    "event_start_date": "2026-09-12T21:00:00Z",
+    "event_location": "Córdoba",
+    "status": "ACTIVE",
+    "purchase_date": "2026-06-05T12:00:00Z",
+    "user_id": 1,
+    "user_email": "ada@example.com"
+  }
+]
+```
+
+#### Errores
+
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `500 Internal Server Error`: error interno.
+
+### `PATCH /api/tickets/:id/cancel`
+
+Cancela una entrada activa propia. No elimina físicamente el registro: cambia `status` a `CANCELLED`.
+
+#### Response `200 OK`
+
+```json
+{
+  "id": 1,
+  "event_id": 1,
+  "event_title": "Rock Nacional",
+  "event_start_date": "2026-09-12T21:00:00Z",
+  "event_location": "Córdoba",
+  "status": "CANCELLED",
+  "purchase_date": "2026-06-05T12:00:00Z",
+  "user_id": 1,
+  "user_email": "ada@example.com"
+}
+```
+
+#### Errores
+
+- `400 Bad Request`: id inválido.
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `403 Forbidden`: el ticket no pertenece al usuario autenticado.
+- `404 Not Found`: el ticket no existe.
+- `409 Conflict`: el ticket no está activo o ya fue cancelado.
+- `500 Internal Server Error`: error interno.
+
+### `PATCH /api/tickets/:id/transfer`
+
+Transfiere una entrada activa propia a otro usuario existente. Mantiene el `status` en `ACTIVE` y actualiza el `user_id` del ticket.
+
+#### Request
+
+```json
+{
+  "target_email": "otro@test.com"
+}
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "id": 1,
+  "event_id": 1,
+  "event_title": "Rock Nacional",
+  "event_start_date": "2026-09-12T21:00:00Z",
+  "event_location": "Córdoba",
+  "status": "ACTIVE",
+  "purchase_date": "2026-06-05T12:00:00Z",
+  "user_id": 2,
+  "user_email": "otro@test.com"
+}
+```
+
+#### Reglas
+
+- `target_email` es requerido.
+- El usuario destino debe existir.
+- El usuario destino no puede ser el mismo usuario autenticado.
+- El usuario destino no puede tener ya un ticket `ACTIVE` para el mismo evento.
+
+#### Errores
+
+- `400 Bad Request`: id inválido, request inválido o `target_email` faltante.
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `403 Forbidden`: el ticket no pertenece al usuario autenticado.
+- `404 Not Found`: el ticket o el usuario destino no existe.
+- `409 Conflict`: el ticket no está activo, el destino es el mismo usuario, o el destino ya tiene ticket activo para el evento.
+- `500 Internal Server Error`: error interno.
+
+> Las respuestas de tickets no devuelven objetos GORM completos ni `password_hash`.
 
 ## Admin
 

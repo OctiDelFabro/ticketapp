@@ -1,0 +1,207 @@
+package services
+
+import (
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/OctiDelFabro/ticketapp/backend/dao"
+	"github.com/OctiDelFabro/ticketapp/backend/domain"
+	"gorm.io/gorm"
+)
+
+const (
+	ticketStatusActive    = "ACTIVE"
+	ticketStatusCancelled = "CANCELLED"
+)
+
+var (
+	ErrTicketNotFound           = errors.New("ticket not found")
+	ErrTicketForbidden          = errors.New("ticket does not belong to authenticated user")
+	ErrTicketAlreadyExists      = errors.New("user already has an active ticket for this event")
+	ErrNoTicketCapacity         = errors.New("no capacity available for this event")
+	ErrTicketNotActive          = errors.New("ticket is not active")
+	ErrTargetUserNotFound       = errors.New("target user not found")
+	ErrTransferToSameUser       = errors.New("target user must be different from authenticated user")
+	ErrTargetUserAlreadyHasSeat = errors.New("target user already has an active ticket for this event")
+)
+
+type PurchaseTicketRequest struct {
+	EventID uint `json:"event_id"`
+}
+
+type TransferTicketRequest struct {
+	TargetEmail string `json:"target_email"`
+}
+
+type TicketResponse struct {
+	ID             uint      `json:"id"`
+	EventID        uint      `json:"event_id"`
+	EventTitle     string    `json:"event_title"`
+	EventStartDate time.Time `json:"event_start_date"`
+	EventLocation  string    `json:"event_location"`
+	Status         string    `json:"status"`
+	PurchaseDate   time.Time `json:"purchase_date"`
+	UserID         uint      `json:"user_id"`
+	UserEmail      string    `json:"user_email"`
+}
+
+func PurchaseTicket(db *gorm.DB, userID uint, req PurchaseTicketRequest) (*TicketResponse, error) {
+	if req.EventID == 0 {
+		return nil, ErrInvalidRequest
+	}
+
+	event, err := dao.FindEventByID(db, req.EventID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrEventNotFound
+		}
+		return nil, err
+	}
+
+	if _, err := dao.FindActiveTicketByUserAndEvent(db, userID, req.EventID); err == nil {
+		return nil, ErrTicketAlreadyExists
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	activeTickets, err := dao.CountActiveTicketsByEventID(db, req.EventID)
+	if err != nil {
+		return nil, err
+	}
+
+	if event.Capacity-int(activeTickets) <= 0 {
+		return nil, ErrNoTicketCapacity
+	}
+
+	ticket := domain.Ticket{
+		UserID:       userID,
+		EventID:      req.EventID,
+		Status:       ticketStatusActive,
+		PurchaseDate: time.Now(),
+	}
+
+	if err := dao.CreateTicket(db, &ticket); err != nil {
+		return nil, err
+	}
+
+	createdTicket, err := dao.FindTicketByID(db, ticket.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := buildTicketResponse(*createdTicket)
+	return &response, nil
+}
+
+func GetMyTickets(db *gorm.DB, userID uint) ([]TicketResponse, error) {
+	tickets, err := dao.FindTicketsByUserID(db, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]TicketResponse, 0, len(tickets))
+	for _, ticket := range tickets {
+		responses = append(responses, buildTicketResponse(ticket))
+	}
+
+	return responses, nil
+}
+
+func CancelTicket(db *gorm.DB, userID uint, ticketID uint) (*TicketResponse, error) {
+	ticket, err := findOwnedActiveTicket(db, userID, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	ticket.Status = ticketStatusCancelled
+	if err := dao.UpdateTicket(db, ticket); err != nil {
+		return nil, err
+	}
+
+	updatedTicket, err := dao.FindTicketByID(db, ticket.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := buildTicketResponse(*updatedTicket)
+	return &response, nil
+}
+
+func TransferTicket(db *gorm.DB, userID uint, ticketID uint, req TransferTicketRequest) (*TicketResponse, error) {
+	req.TargetEmail = strings.TrimSpace(req.TargetEmail)
+	if req.TargetEmail == "" {
+		return nil, ErrInvalidRequest
+	}
+
+	ticket, err := findOwnedActiveTicket(db, userID, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	targetUser, err := dao.FindUserByEmail(db, req.TargetEmail)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTargetUserNotFound
+		}
+		return nil, err
+	}
+
+	if targetUser.ID == userID {
+		return nil, ErrTransferToSameUser
+	}
+
+	if _, err := dao.FindActiveTicketByUserAndEvent(db, targetUser.ID, ticket.EventID); err == nil {
+		return nil, ErrTargetUserAlreadyHasSeat
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	ticket.UserID = targetUser.ID
+	ticket.User = *targetUser
+	if err := dao.UpdateTicket(db, ticket); err != nil {
+		return nil, err
+	}
+
+	updatedTicket, err := dao.FindTicketByID(db, ticket.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := buildTicketResponse(*updatedTicket)
+	return &response, nil
+}
+
+func findOwnedActiveTicket(db *gorm.DB, userID uint, ticketID uint) (*domain.Ticket, error) {
+	ticket, err := dao.FindTicketByID(db, ticketID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTicketNotFound
+		}
+		return nil, err
+	}
+
+	if ticket.UserID != userID {
+		return nil, ErrTicketForbidden
+	}
+
+	if ticket.Status != ticketStatusActive {
+		return nil, ErrTicketNotActive
+	}
+
+	return ticket, nil
+}
+
+func buildTicketResponse(ticket domain.Ticket) TicketResponse {
+	return TicketResponse{
+		ID:             ticket.ID,
+		EventID:        ticket.EventID,
+		EventTitle:     ticket.Event.Title,
+		EventStartDate: ticket.Event.StartDate,
+		EventLocation:  ticket.Event.Location,
+		Status:         ticket.Status,
+		PurchaseDate:   ticket.PurchaseDate,
+		UserID:         ticket.UserID,
+		UserEmail:      ticket.User.Email,
+	}
+}
