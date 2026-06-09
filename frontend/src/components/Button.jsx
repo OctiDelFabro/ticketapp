@@ -7,7 +7,7 @@ const styles = {
 }
 
 export default function Button({ children, variant = 'primary', className = '', to, ...props }) {
-  const classes = `inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-bold transition ${styles[variant]} ${className}`
+  const classes = `inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${styles[variant]} ${className}`
   if (to) return <Link to={to} className={classes}>{children}</Link>
   return <button className={classes} {...props}>{children}</button>
 }

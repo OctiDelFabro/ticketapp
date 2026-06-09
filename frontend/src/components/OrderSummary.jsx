@@ -1,6 +1,6 @@
 import Button from './Button.jsx'
 
-export default function OrderSummary({ event, quantity, buttonText, onNext, onRemove }) {
+export default function OrderSummary({ event, quantity, buttonText, onNext, onRemove, disabled = false }) {
   const eventPath = event ? `/evento/${event.id}` : '/'
 
   if (!event) {
@@ -43,8 +43,8 @@ export default function OrderSummary({ event, quantity, buttonText, onNext, onRe
         <span>Total</span>
         <span className="text-violet-200">General</span>
       </div>
-      <Button onClick={onRemove} variant="danger" className="mb-3 w-full">Quitar del carrito</Button>
-      {buttonText && <Button onClick={onNext} className="w-full">{buttonText}</Button>}
+      <Button onClick={onRemove} variant="danger" className="mb-3 w-full" disabled={disabled}>Quitar del carrito</Button>
+      {buttonText && <Button onClick={onNext} className="w-full" disabled={disabled}>{buttonText}</Button>}
     </aside>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import AlertMessage from '../components/AlertMessage.jsx'
 import Button from '../components/Button.jsx'
 import CheckoutProgress from '../components/CheckoutProgress.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
@@ -8,6 +9,12 @@ import { getStoredUser, isAuthenticated } from '../utils/auth.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phonePattern = /^\+?[\d\s]{8,20}$/
+
+const friendlyPurchaseError = (message) => {
+  if (!message) return 'No se pudo completar la compra.'
+  if (message.length > 120) return 'No se pudo completar la compra.'
+  return `No se pudo completar la compra. ${message}`
+}
 
 export default function Checkout({ cartItem, setCartItem }) {
   const [step, setStep] = useState(1)
@@ -61,7 +68,7 @@ export default function Checkout({ cartItem, setCartItem }) {
 
   const confirmPurchase = async () => {
     if (!isAuthenticated()) {
-      navigate('/login')
+      navigate('/login', { state: { message: 'Necesitás iniciar sesión para comprar una entrada.' } })
       return
     }
 
@@ -74,13 +81,14 @@ export default function Checkout({ cartItem, setCartItem }) {
       setCartItem(null)
       setStep(4)
     } catch (err) {
-      setPurchaseError(err.message)
+      setPurchaseError(friendlyPurchaseError(err.message))
     } finally {
       setPurchasing(false)
     }
   }
 
   const next = () => {
+    if (purchasing) return
     if (!event) return
     if (step === 2 && !validateCustomer()) return
     if (step === 3) {
@@ -103,6 +111,7 @@ export default function Checkout({ cartItem, setCartItem }) {
   }
 
   const removeCartItem = () => {
+    if (purchasing) return
     setCartItem(null)
     setStep(1)
   }
@@ -111,7 +120,7 @@ export default function Checkout({ cartItem, setCartItem }) {
     <div className="bg-ticket-alt">
       <main className="container-page py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button onClick={goBack} className="w-fit font-bold text-gray-300 hover:text-white">
+          <button onClick={goBack} className="w-fit font-bold text-gray-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={purchasing} type="button">
             {step === 1 ? '← Volver al evento' : '← Volver'}
           </button>
           <h1 className="text-xl font-black">{event ? `${event.title} - TicketApp Checkout` : 'TicketApp Checkout'}</h1>
@@ -180,7 +189,9 @@ export default function Checkout({ cartItem, setCartItem }) {
                     {['Crédito', 'Débito', 'MercadoPago'].map((item) => (
                       <button
                         key={item}
+                        disabled={purchasing}
                         onClick={() => setPayment(item)}
+                        type="button"
                         className={`rounded-2xl border px-5 py-3 font-black ${payment === item ? 'border-ticket-purple bg-ticket-purple' : 'border-ticket-border bg-ticket-card2 text-gray-300'}`}
                       >
                         {item}
@@ -195,7 +206,8 @@ export default function Checkout({ cartItem, setCartItem }) {
                     </div>
                     <Field error={errors.holder}><input className={`input-dark ${errors.holder ? 'border-red-500' : ''}`} onChange={(event) => updateCard('holder', event.target.value)} placeholder="Titular de la tarjeta" value={card.holder} /></Field>
                   </form>
-                  {purchaseError && <div className="mt-5 rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{purchaseError}</div>}
+                  <div className="mt-5"><AlertMessage type="error" message={purchaseError} onClose={() => setPurchaseError('')} /></div>
+                  {purchasing && <p className="mt-4 text-sm font-bold text-violet-200">Procesando compra...</p>}
                 </div>
               )}
             </section>
@@ -205,21 +217,20 @@ export default function Checkout({ cartItem, setCartItem }) {
               buttonText={step === 3 ? (purchasing ? 'Confirmando...' : 'Finalizar compra') : 'Continuar'}
               onNext={next}
               onRemove={removeCartItem}
+              disabled={purchasing}
             />
           </div>
         ) : (
           <section className="mx-auto mt-10 max-w-2xl text-center">
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-ticket-purple text-5xl font-black shadow-glow">✓</div>
-            <h2 className="mt-6 text-4xl font-black">¡Compra confirmada!</h2>
-            <p className="mt-3 text-gray-400">Tu entrada real ya está asociada a tu cuenta.</p>
+            <h2 className="mt-6 text-4xl font-black">Su compra fue exitosa.</h2>
+            <p className="mt-3 text-gray-400">Tu entrada ya está asociada a tu cuenta.</p>
             <div className="glass-card mt-8 rounded-3xl p-6 text-left">
               <div className="mt-6 grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
                 <p>Evento: <b className="text-white">{confirmedTicket?.event_title ?? confirmedEvent?.title}</b></p>
                 <p>Fecha: <b className="text-white">{confirmedEvent?.date}</b></p>
                 <p>Lugar: <b className="text-white">{confirmedTicket?.event_location ?? confirmedEvent?.venue}</b></p>
-                <p>Cantidad de entradas: <b className="text-white">1</b></p>
                 <p>Tipo de entrada: <b className="text-white">General</b></p>
-                <p className="sm:col-span-2">Estado: <b className="text-violet-200">{confirmedTicket?.status ?? 'ACTIVE'}</b></p>
               </div>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
