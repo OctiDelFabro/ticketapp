@@ -28,6 +28,10 @@ func main() {
 		log.Fatalf("failed to seed initial events: %v", err)
 	}
 
+	if err := config.SeedDemoData(db); err != nil {
+		log.Fatalf("failed to seed demo data: %v", err)
+	}
+
 	router := gin.Default()
 	router.Use(corsMiddleware())
 	routes.SetupRoutes(router, db)

@@ -27,6 +27,10 @@ ticketapp/
 └── README.md
 ```
 
+## Setup local
+
+Para levantar el proyecto localmente con base MySQL, migraciones y datos demo reproducibles, seguí la guía de [setup local](docs/LOCAL_SETUP.md).
+
 ## Backend - ejecución local
 
 ```bash
