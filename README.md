@@ -49,3 +49,15 @@ El backend usa `JWT_SECRET` para firmar tokens y `JWT_EXPIRATION_HOURS` para con
 JWT_SECRET=super-secret-dev-key
 JWT_EXPIRATION_HOURS=24
 ```
+
+## Testing backend
+
+```bash
+cd backend
+go test ./...
+go test ./... -coverpkg=./...
+go test ./... -coverpkg=./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+```
+
+Los tests de backend usan SQLite en memoria para no depender de una instancia MySQL real.
