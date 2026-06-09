@@ -20,7 +20,9 @@ import (
 func newTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	dbName := strings.NewReplacer("/", "_", " ", "_", ":", "_").Replace(t.Name())
+	dsn := fmt.Sprintf("file:%s-%d?mode=memory&cache=shared", dbName, time.Now().UnixNano())
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	mustNoError(t, err)
 
 	sqlDB, err := db.DB()
@@ -53,6 +55,9 @@ func createTestEvent(t *testing.T, db *gorm.DB, attrs ...func(*domain.Event)) do
 	}
 
 	mustNoError(t, db.Create(&event).Error)
+	if !event.Active {
+		mustNoError(t, db.Model(&event).Update("active", false).Error)
+	}
 	return event
 }
 

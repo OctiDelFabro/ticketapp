@@ -22,8 +22,8 @@ Desde la raíz del repositorio:
 ```bash
 cd backend
 go test ./...
-go test ./... -cover
-go test ./... -coverprofile=coverage.out
+go test ./... -coverpkg=./...
+go test ./... -coverpkg=./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
 ```
 
@@ -34,5 +34,7 @@ cd backend
 gofmt -w tests/*.go
 go mod tidy
 go test ./...
-go test ./... -cover
+go test ./... -coverpkg=./...
+go test ./... -coverpkg=./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
 ```
