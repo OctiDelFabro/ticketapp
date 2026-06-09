@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertMessage from '../components/AlertMessage.jsx'
 import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import EventCard from '../components/EventCard.jsx'
@@ -62,7 +63,7 @@ export default function Home({ searchQuery = '' }) {
           <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
             {categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-full border px-5 py-2 text-sm font-black transition ${category === item ? 'border-ticket-purple bg-ticket-purple text-white shadow-glow' : 'border-ticket-border bg-ticket-card text-gray-300 hover:border-ticket-purple2/60'}`}>{item}</button>)}
           </div>
-          {error && <div className="mt-6 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">{error}</div>}
+          <div className="mt-6"><AlertMessage type="error" message={error} onClose={() => setError('')} /></div>
           {loading ? (
             <div className="mt-8 rounded-3xl border border-ticket-border bg-ticket-card p-10 text-center text-gray-400">Cargando eventos...</div>
           ) : (

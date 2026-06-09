@@ -1,19 +1,34 @@
 import { useState } from 'react'
+import AlertMessage from './AlertMessage.jsx'
 import Badge from './Badge.jsx'
 import Button from './Button.jsx'
 import { fallbackEventImage, formatEventDate, formatEventTime } from '../utils/events.js'
 
-export default function TicketCard({ ticket, onCancel, onTransfer }) {
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = false, disabled = false, transferring = false }) {
   const [targetEmail, setTargetEmail] = useState('')
   const [showTransfer, setShowTransfer] = useState(false)
+  const [emailError, setEmailError] = useState('')
   const isActive = ticket.status === 'ACTIVE'
 
   const submitTransfer = () => {
+    if (disabled) return
     const email = targetEmail.trim()
-    if (!email) return
+    if (!emailPattern.test(email)) {
+      setEmailError('Ingresá un email destino válido.')
+      return
+    }
     onTransfer(ticket.id, email)
     setTargetEmail('')
+    setEmailError('')
     setShowTransfer(false)
+  }
+
+  const toggleTransfer = () => {
+    if (disabled) return
+    setShowTransfer((value) => !value)
+    setEmailError('')
   }
 
   return (
@@ -29,11 +44,15 @@ export default function TicketCard({ ticket, onCancel, onTransfer }) {
             <p>Email: <span className="font-bold text-white">{ticket.user_email}</span></p>
             <p>Tipo: <span className="font-bold text-white">General</span></p>
           </div>
-          {isActive && <div className="mt-5 flex flex-wrap gap-3"><Button onClick={() => onCancel(ticket.id)} variant="danger" type="button">× Cancelar</Button><Button onClick={() => setShowTransfer((value) => !value)} variant="secondary" type="button">Transferir</Button></div>}
+          {isActive && <div className="mt-5 flex flex-wrap gap-3"><Button onClick={() => onCancel(ticket.id)} variant="danger" type="button" disabled={disabled}>{cancelling ? 'Cancelando entrada...' : '× Cancelar'}</Button><Button onClick={toggleTransfer} variant="secondary" type="button" disabled={disabled}>{transferring ? 'Transfiriendo entrada...' : 'Transferir'}</Button></div>}
           {isActive && showTransfer && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <input className="input-dark" onChange={(event) => setTargetEmail(event.target.value)} placeholder="Email destino" type="email" value={targetEmail} />
-              <Button onClick={submitTransfer} type="button">Confirmar</Button>
+            <div className="mt-4 space-y-3">
+              <label className="block text-sm font-bold text-gray-300" htmlFor={`transfer-${ticket.id}`}>Email destino para transferir la entrada</label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input id={`transfer-${ticket.id}`} className={`input-dark ${emailError ? 'border-red-500' : ''}`} disabled={disabled} onChange={(event) => { setTargetEmail(event.target.value); setEmailError('') }} placeholder="email@destino.com" type="email" value={targetEmail} />
+                <Button onClick={submitTransfer} type="button" disabled={disabled}>Confirmar transferencia</Button>
+              </div>
+              <AlertMessage type="error" message={emailError} />
             </div>
           )}
         </div>

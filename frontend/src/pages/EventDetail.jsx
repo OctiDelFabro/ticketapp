@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import AlertMessage from '../components/AlertMessage.jsx'
 import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import { getEventById } from '../services/api.js'
@@ -12,7 +13,6 @@ export default function EventDetail({ onAddToCart }) {
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [authMessage, setAuthMessage] = useState('')
 
   useEffect(() => {
     let ignore = false
@@ -38,8 +38,7 @@ export default function EventDetail({ onAddToCart }) {
 
   const checkout = () => {
     if (!isAuthenticated()) {
-      setAuthMessage('Necesitás iniciar sesión para comprar una entrada.')
-      navigate('/login')
+      navigate('/login', { state: { message: 'Necesitás iniciar sesión para comprar una entrada.' } })
       return
     }
 
@@ -58,7 +57,7 @@ export default function EventDetail({ onAddToCart }) {
   if (error || !event) {
     return (
       <div className="app-shell grid place-items-center px-4">
-        <div className="glass-card max-w-lg rounded-3xl p-10 text-center"><h1 className="text-4xl font-black">Evento no encontrado</h1><p className="mt-4 text-gray-400">{error || 'El evento que buscás no existe o ya no está disponible.'}</p><Button to="/" className="mt-8">Volver al Home</Button></div>
+        <div className="glass-card max-w-lg rounded-3xl p-10 text-center"><h1 className="text-4xl font-black">Evento no encontrado</h1><div className="mt-4"><AlertMessage type="error" message={error || 'El evento que buscás no existe o ya no está disponible.'} /></div><Button to="/" className="mt-8">Volver al Home</Button></div>
       </div>
     )
   }
@@ -96,7 +95,6 @@ export default function EventDetail({ onAddToCart }) {
             <h2 className="text-2xl font-black">Comprar entrada</h2>
             <div className="mt-5 rounded-2xl border border-ticket-border bg-ticket-card2 p-4"><div className="flex justify-between"><div><p className="font-black">General</p><p className="text-sm text-gray-400">Acceso general</p></div><p className="text-xl font-black text-violet-200">Disponible</p></div></div>
             <div className="my-6 space-y-3 border-y border-ticket-border py-5"><div className="flex justify-between text-gray-300"><span>General × 1</span><span>Entrada</span></div><div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div></div>
-            {authMessage && <p className="mb-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{authMessage}</p>}
             <Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
           </aside>
         </div>
