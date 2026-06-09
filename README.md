@@ -39,7 +39,7 @@ go mod tidy
 go run main.go
 ```
 
-Al iniciar, el backend conecta con MySQL usando las variables de entorno configuradas, ejecuta las migraciones GORM de los modelos `User`, `Event` y `Ticket`, y carga cuatro eventos iniciales si la tabla `events` está vacía.
+Al iniciar, el backend conecta con MySQL usando las variables de entorno configuradas, crea la base `ticketapp` si no existe, ejecuta las migraciones GORM de los modelos `User`, `Event` y `Ticket`, y carga datos demo idempotentes: eventos, usuarios cliente y tickets de prueba.
 
 ### Variables JWT
 
