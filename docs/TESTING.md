@@ -2,12 +2,37 @@
 
 ## Objetivo
 
-El proyecto debe incorporar pruebas automatizadas para validar la lógica principal del sistema y los endpoints HTTP.
+El proyecto incorpora pruebas automatizadas para validar la lógica principal del sistema y los endpoints HTTP del backend.
+
+- Objetivo de regularidad: alcanzar una cobertura inicial cercana o superior al 40%.
+- Objetivo final: alcanzar una cobertura cercana al 80%.
 
 ## Estrategia
 
-- Tests unitarios en servicios.
-- Tests de integración HTTP en controladores.
-- Usar `testing`, `httptest` y opcionalmente `testify`.
-- Objetivo inicial: 40% de cobertura.
-- Objetivo final: 80% de cobertura.
+- Tests unitarios de services para los flujos principales de autenticación, eventos y tickets.
+- Tests de integración HTTP de controllers/routes con `httptest` y el router real de Gin.
+- Base de datos SQLite en memoria solo para tests con GORM.
+- Los tests no llaman a `config.ConnectDatabase()`, no leen el `.env` real y no requieren MySQL corriendo.
+- Los tests actuales cubren services y controllers principales del flujo cliente.
+
+## Comandos
+
+Desde la raíz del repositorio:
+
+```bash
+cd backend
+go test ./...
+go test ./... -cover
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+```
+
+También se recomienda ejecutar el orden completo usado para validar cambios de backend:
+
+```bash
+cd backend
+gofmt -w tests/*.go
+go mod tidy
+go test ./...
+go test ./... -cover
+```
