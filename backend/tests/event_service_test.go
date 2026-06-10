@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/OctiDelFabro/ticketapp/backend/dao"
 	"github.com/OctiDelFabro/ticketapp/backend/domain"
@@ -10,11 +11,31 @@ import (
 
 func TestListEventsReturnsOnlyActiveEvents(t *testing.T) {
 	db := newTestDB(t)
-	active := createTestEvent(t, db, func(event *domain.Event) { event.Title = "Active Concert" })
-	createTestEvent(t, db, func(event *domain.Event) {
-		event.Title = "Inactive Concert"
-		event.Active = false
-	})
+	active := domain.Event{
+		Title:           "Active Concert",
+		Description:     "An active event description",
+		ImageURL:        "https://example.com/active-event.jpg",
+		Category:        "Music",
+		Location:        "Buenos Aires",
+		StartDate:       time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second),
+		DurationMinutes: 120,
+		Capacity:        10,
+		Active:          true,
+	}
+	inactive := domain.Event{
+		Title:           "Inactive Concert",
+		Description:     "An inactive event description",
+		ImageURL:        "https://example.com/inactive-event.jpg",
+		Category:        "Music",
+		Location:        "Buenos Aires",
+		StartDate:       time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second),
+		DurationMinutes: 120,
+		Capacity:        10,
+		Active:          true,
+	}
+	mustNoError(t, db.Create(&active).Error)
+	mustNoError(t, db.Create(&inactive).Error)
+	mustNoError(t, db.Model(&inactive).Update("active", false).Error)
 
 	events, err := services.ListEvents(db, dao.EventFilters{})
 
@@ -91,7 +112,9 @@ func TestGetEventByIDReturnsErrorWhenMissing(t *testing.T) {
 
 func TestGetEventByIDReturnsErrorWhenInactive(t *testing.T) {
 	db := newTestDB(t)
-	event := createTestEvent(t, db, func(event *domain.Event) { event.Active = false })
+	event := createTestEvent(t, db)
+	event.Active = false
+	mustNoError(t, db.Save(&event).Error)
 
 	_, err := services.GetEventByID(db, event.ID)
 

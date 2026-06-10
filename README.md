@@ -60,4 +60,4 @@ go test ./... -coverpkg=./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
 ```
 
-Los tests de backend usan SQLite en memoria para no depender de una instancia MySQL real.
+Los tests de backend usan SQLite en memoria con un driver pure-Go, por lo que no dependen de una instancia MySQL real ni requieren CGO/gcc.
