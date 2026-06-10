@@ -31,10 +31,11 @@ func TestListEventsReturnsOnlyActiveEvents(t *testing.T) {
 		StartDate:       time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second),
 		DurationMinutes: 120,
 		Capacity:        10,
-		Active:          false,
+		Active:          true,
 	}
 	mustNoError(t, db.Create(&active).Error)
-	mustNoError(t, db.Select("*").Create(&inactive).Error)
+	mustNoError(t, db.Create(&inactive).Error)
+	mustNoError(t, db.Model(&inactive).Update("active", false).Error)
 
 	events, err := services.ListEvents(db, dao.EventFilters{})
 
