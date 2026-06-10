@@ -34,14 +34,10 @@ export default function OrderSummary({ event, quantity, buttonText, onNext, onRe
           <span>General x {quantity}</span>
           <span>Entrada</span>
         </div>
-        <div className="flex justify-between text-gray-300">
-          <span>Emisión backend</span>
-          <span>Ticket real</span>
-        </div>
       </div>
       <div className="mb-5 flex justify-between text-xl font-black">
-        <span>Total</span>
-        <span className="text-violet-200">General</span>
+        <span>Total de entradas</span>
+        <span className="text-violet-200">{quantity}</span>
       </div>
       <Button onClick={onRemove} variant="danger" className="mb-3 w-full" disabled={disabled}>Quitar del carrito</Button>
       {buttonText && <Button onClick={onNext} className="w-full" disabled={disabled}>{buttonText}</Button>}

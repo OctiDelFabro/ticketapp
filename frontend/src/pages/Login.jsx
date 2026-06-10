@@ -107,10 +107,8 @@ export default function Login({ setIsLoggedIn }) {
               <Field error={errors.password}>
                 <div className="relative"><input className={`input-dark pr-14 ${errors.password ? 'border-red-500' : ''}`} disabled={loading} onChange={(event) => updateField('password', event.target.value)} type={showPassword ? 'text' : 'password'} placeholder="Contraseña" value={form.password} /><button type="button" disabled={loading} onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-lg disabled:cursor-not-allowed disabled:opacity-60">{showPassword ? '🙈' : '👁️'}</button></div>
               </Field>
-              {mode === 'login' && <div className="text-right"><button type="button" disabled={loading} className="text-sm font-bold text-violet-300 hover:text-violet-100 disabled:cursor-not-allowed disabled:opacity-60">¿Olvidaste tu contraseña?</button></div>}
               <Button className="w-full disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={loading}>{submitText}</Button>
             </form>
-            {mode === 'login' && <><div className="my-6 flex items-center gap-3 text-sm text-gray-500"><span className="h-px flex-1 bg-ticket-border" />o continuá con<span className="h-px flex-1 bg-ticket-border" /></div><div className="grid grid-cols-2 gap-3"><Button type="button" variant="secondary" disabled>G Google</Button><Button type="button" variant="secondary" disabled>f Facebook</Button></div></>}
           </div>
         </div>
       </main>

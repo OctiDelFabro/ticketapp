@@ -39,15 +39,45 @@ func TestPurchaseTicketWithoutCapacityReturnsError(t *testing.T) {
 	mustErrorIs(t, err, services.ErrNoTicketCapacity)
 }
 
-func TestPurchaseTicketDuplicateReturnsError(t *testing.T) {
+func TestPurchaseTicketsWithQuantityAboveCapacityReturnsError(t *testing.T) {
+	db := newTestDB(t)
+	user := createTestUser(t, db)
+	event := createTestEvent(t, db, func(event *domain.Event) { event.Capacity = 1 })
+	quantity := 2
+
+	_, err := services.PurchaseTickets(db, user.ID, services.PurchaseTicketRequest{EventID: event.ID, Quantity: &quantity})
+
+	mustErrorIs(t, err, services.ErrNoTicketCapacity)
+}
+
+func TestPurchaseTicketsAllowsSameUserToBuyMultipleTicketsForSameEvent(t *testing.T) {
+	db := newTestDB(t)
+	user := createTestUser(t, db)
+	event := createTestEvent(t, db, func(event *domain.Event) { event.Capacity = 3 })
+	quantity := 2
+
+	response, err := services.PurchaseTickets(db, user.ID, services.PurchaseTicketRequest{EventID: event.ID, Quantity: &quantity})
+
+	mustNoError(t, err)
+	mustNotNil(t, response)
+	mustEqual(t, 2, response.Quantity)
+	mustLen(t, response.Tickets, 2)
+	mustNotEqual(t, response.Tickets[0].ID, response.Tickets[1].ID)
+
+	var count int64
+	mustNoError(t, db.Model(&domain.Ticket{}).Where("user_id = ? AND event_id = ? AND status = ?", user.ID, event.ID, "ACTIVE").Count(&count).Error)
+	mustEqual(t, int64(2), count)
+}
+
+func TestPurchaseTicketsWithInvalidQuantityReturnsError(t *testing.T) {
 	db := newTestDB(t)
 	user := createTestUser(t, db)
 	event := createTestEvent(t, db)
-	createTestTicket(t, db, user.ID, event.ID, "ACTIVE")
+	quantity := 0
 
-	_, err := services.PurchaseTicket(db, user.ID, services.PurchaseTicketRequest{EventID: event.ID})
+	_, err := services.PurchaseTickets(db, user.ID, services.PurchaseTicketRequest{EventID: event.ID, Quantity: &quantity})
 
-	mustErrorIs(t, err, services.ErrTicketAlreadyExists)
+	mustErrorIs(t, err, services.ErrInvalidTicketQuantity)
 }
 
 func TestGetMyTicketsReturnsOnlyAuthenticatedUserTickets(t *testing.T) {
@@ -127,7 +157,7 @@ func TestTransferTicketToMissingUserReturnsError(t *testing.T) {
 	mustErrorIs(t, err, services.ErrTargetUserNotFound)
 }
 
-func TestTransferTicketToUserWithActiveTicketForSameEventReturnsError(t *testing.T) {
+func TestTransferTicketToUserWithActiveTicketForSameEventSucceeds(t *testing.T) {
 	db := newTestDB(t)
 	owner := createTestUser(t, db, func(user *domain.User) { user.Email = "owner@example.com" })
 	target := createTestUser(t, db, func(user *domain.User) { user.Email = "target@example.com" })
@@ -135,7 +165,8 @@ func TestTransferTicketToUserWithActiveTicketForSameEventReturnsError(t *testing
 	ownedTicket := createTestTicket(t, db, owner.ID, event.ID, "ACTIVE")
 	createTestTicket(t, db, target.ID, event.ID, "ACTIVE")
 
-	_, err := services.TransferTicket(db, owner.ID, ownedTicket.ID, services.TransferTicketRequest{TargetEmail: target.Email})
+	response, err := services.TransferTicket(db, owner.ID, ownedTicket.ID, services.TransferTicketRequest{TargetEmail: target.Email})
 
-	mustErrorIs(t, err, services.ErrTargetUserAlreadyHasSeat)
+	mustNoError(t, err)
+	mustEqual(t, target.ID, response.UserID)
 }

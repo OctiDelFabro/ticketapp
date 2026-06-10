@@ -13,6 +13,7 @@ export default function EventDetail({ onAddToCart }) {
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
     let ignore = false
@@ -36,13 +37,21 @@ export default function EventDetail({ onAddToCart }) {
     }
   }, [id])
 
+  const selectedQuantity = Math.min(Math.max(quantity, 1), event?.available_capacity || 1)
+
+  const updateQuantity = (value) => {
+    const nextQuantity = Number(value)
+    if (!Number.isFinite(nextQuantity)) return
+    setQuantity(Math.min(Math.max(nextQuantity, 1), event?.available_capacity || 1))
+  }
+
   const checkout = () => {
     if (!isAuthenticated()) {
       navigate('/login', { state: { message: 'Necesitás iniciar sesión para comprar una entrada.' } })
       return
     }
 
-    onAddToCart({ eventId: event.id, event: normalizeCartEvent(event), quantity: 1 })
+    onAddToCart({ eventId: event.id, event: normalizeCartEvent(event), quantity: selectedQuantity })
     navigate('/checkout')
   }
 
@@ -94,7 +103,14 @@ export default function EventDetail({ onAddToCart }) {
           <aside className="h-fit rounded-3xl border border-ticket-purple2/35 bg-ticket-card p-6 shadow-glow lg:sticky lg:top-8">
             <h2 className="text-2xl font-black">Comprar entrada</h2>
             <div className="mt-5 rounded-2xl border border-ticket-border bg-ticket-card2 p-4"><div className="flex justify-between"><div><p className="font-black">General</p><p className="text-sm text-gray-400">Acceso general</p></div><p className="text-xl font-black text-violet-200">Disponible</p></div></div>
-            <div className="my-6 space-y-3 border-y border-ticket-border py-5"><div className="flex justify-between text-gray-300"><span>General × 1</span><span>Entrada</span></div><div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div></div>
+            <div className="my-6 space-y-4 border-y border-ticket-border py-5">
+              <label className="block">
+                <span className="text-sm font-bold text-gray-300">Cantidad</span>
+                <input className="input-dark mt-2" min="1" max={event.available_capacity} onChange={(inputEvent) => updateQuantity(inputEvent.target.value)} type="number" value={selectedQuantity} />
+              </label>
+              <div className="flex justify-between text-gray-300"><span>General × {selectedQuantity}</span><span>{selectedQuantity === 1 ? 'Entrada' : 'Entradas'}</span></div>
+              <div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div>
+            </div>
             <Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
           </aside>
         </div>

@@ -25,6 +25,9 @@ export const clearAuthSession = () => {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
   localStorage.setItem(LEGACY_LOGIN_KEY, 'false')
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(LEGACY_LOGIN_KEY)
 }
 
 export const isAuthenticated = () => Boolean(getStoredToken())
