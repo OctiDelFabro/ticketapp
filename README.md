@@ -54,10 +54,18 @@ JWT_EXPIRATION_HOURS=24
 
 ```bash
 cd backend
+go mod download
 go test ./...
-go test ./... -coverpkg=./...
-go test ./... -coverpkg=./... -coverprofile=coverage.out
-go tool cover -func=coverage.out
+
+go test ./tests "-coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils" "-coverprofile=coverage.out"
+go tool cover "-func=coverage.out"
+
+$env:CGO_ENABLED="0"
+go test ./...
+go test ./tests "-coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils"
+Remove-Item Env:\CGO_ENABLED
+
+Remove-Item .\coverage.out -Force -ErrorAction SilentlyContinue
 ```
 
 Los tests de backend usan SQLite en memoria con un driver pure-Go, por lo que no dependen de una instancia MySQL real ni requieren CGO/gcc.
