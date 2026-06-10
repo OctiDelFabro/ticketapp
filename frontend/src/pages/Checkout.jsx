@@ -25,7 +25,7 @@ export default function Checkout({ cartItem, setCartItem }) {
   const [errors, setErrors] = useState({})
   const [purchaseError, setPurchaseError] = useState('')
   const [purchasing, setPurchasing] = useState(false)
-  const [confirmedTicket, setConfirmedTicket] = useState(null)
+  const [confirmedTickets, setConfirmedTickets] = useState([])
   const [confirmedEvent, setConfirmedEvent] = useState(null)
   const navigate = useNavigate()
 
@@ -59,7 +59,7 @@ export default function Checkout({ cartItem, setCartItem }) {
   const validatePayment = () => {
     const nextErrors = {}
     if (!/^\d{13,19}$/.test(card.number.trim())) nextErrors.number = 'El número de tarjeta debe contener entre 13 y 19 números.'
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry.trim())) nextErrors.expiry = 'Ingresá el vencimiento con formato MM/AA.'
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(card.expiry.trim())) nextErrors.expiry = 'Seleccioná el vencimiento de la tarjeta.'
     if (!/^\d{3,4}$/.test(card.cvv.trim())) nextErrors.cvv = 'El CVV debe contener 3 o 4 números.'
     if (!card.holder.trim()) nextErrors.holder = 'Ingresá el titular de la tarjeta.'
     setErrors(nextErrors)
@@ -75,8 +75,9 @@ export default function Checkout({ cartItem, setCartItem }) {
     setPurchasing(true)
     setPurchaseError('')
     try {
-      const ticket = await purchaseTicket(event.id)
-      setConfirmedTicket(ticket)
+      const purchase = await purchaseTicket(event.id, quantity)
+      const tickets = Array.isArray(purchase?.tickets) ? purchase.tickets : [purchase]
+      setConfirmedTickets(tickets)
       setConfirmedEvent(event)
       setCartItem(null)
       setStep(4)
@@ -201,7 +202,7 @@ export default function Checkout({ cartItem, setCartItem }) {
                   <form className="mt-6 grid gap-4">
                     <Field error={errors.number}><input className={`input-dark ${errors.number ? 'border-red-500' : ''}`} inputMode="numeric" onChange={(event) => updateCard('number', event.target.value.replace(/\D/g, ''))} placeholder="Número de tarjeta" value={card.number} /></Field>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field error={errors.expiry}><input className={`input-dark ${errors.expiry ? 'border-red-500' : ''}`} onChange={(event) => updateCard('expiry', event.target.value)} placeholder="Vencimiento MM/AA" value={card.expiry} /></Field>
+                      <Field error={errors.expiry}><input className={`input-dark ${errors.expiry ? 'border-red-500' : ''}`} onChange={(event) => updateCard('expiry', event.target.value)} placeholder="Vencimiento" type="month" value={card.expiry} /></Field>
                       <Field error={errors.cvv}><input className={`input-dark ${errors.cvv ? 'border-red-500' : ''}`} inputMode="numeric" onChange={(event) => updateCard('cvv', event.target.value.replace(/\D/g, ''))} placeholder="CVV" value={card.cvv} /></Field>
                     </div>
                     <Field error={errors.holder}><input className={`input-dark ${errors.holder ? 'border-red-500' : ''}`} onChange={(event) => updateCard('holder', event.target.value)} placeholder="Titular de la tarjeta" value={card.holder} /></Field>
@@ -224,12 +225,13 @@ export default function Checkout({ cartItem, setCartItem }) {
           <section className="mx-auto mt-10 max-w-2xl text-center">
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-ticket-purple text-5xl font-black shadow-glow">✓</div>
             <h2 className="mt-6 text-4xl font-black">Su compra fue exitosa.</h2>
-            <p className="mt-3 text-gray-400">Tu entrada ya está asociada a tu cuenta.</p>
+            <p className="mt-3 text-gray-400">{quantity === 1 ? 'Tu entrada ya está asociada a tu cuenta.' : 'Tus entradas ya están asociadas a tu cuenta.'}</p>
             <div className="glass-card mt-8 rounded-3xl p-6 text-left">
               <div className="mt-6 grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
-                <p>Evento: <b className="text-white">{confirmedTicket?.event_title ?? confirmedEvent?.title}</b></p>
+                <p>Evento: <b className="text-white">{confirmedTickets[0]?.event_title ?? confirmedEvent?.title}</b></p>
                 <p>Fecha: <b className="text-white">{confirmedEvent?.date}</b></p>
-                <p>Lugar: <b className="text-white">{confirmedTicket?.event_location ?? confirmedEvent?.venue}</b></p>
+                <p>Lugar: <b className="text-white">{confirmedTickets[0]?.event_location ?? confirmedEvent?.venue}</b></p>
+                <p>Cantidad: <b className="text-white">{confirmedTickets.length || quantity}</b></p>
                 <p>Tipo de entrada: <b className="text-white">General</b></p>
               </div>
             </div>

@@ -20,6 +20,7 @@ var (
 	ErrTicketForbidden          = errors.New("ticket does not belong to authenticated user")
 	ErrTicketAlreadyExists      = errors.New("user already has an active ticket for this event")
 	ErrNoTicketCapacity         = errors.New("no capacity available for this event")
+	ErrInvalidTicketQuantity    = errors.New("ticket quantity must be greater than zero")
 	ErrTicketNotActive          = errors.New("ticket is not active")
 	ErrTargetUserNotFound       = errors.New("target user not found")
 	ErrTransferToSameUser       = errors.New("target user must be different from authenticated user")
@@ -27,7 +28,13 @@ var (
 )
 
 type PurchaseTicketRequest struct {
-	EventID uint `json:"event_id"`
+	EventID  uint `json:"event_id"`
+	Quantity *int `json:"quantity,omitempty"`
+}
+
+type PurchaseTicketsResponse struct {
+	Tickets  []TicketResponse `json:"tickets"`
+	Quantity int              `json:"quantity"`
 }
 
 type TransferTicketRequest struct {
@@ -47,51 +54,75 @@ type TicketResponse struct {
 }
 
 func PurchaseTicket(db *gorm.DB, userID uint, req PurchaseTicketRequest) (*TicketResponse, error) {
+	response, err := PurchaseTickets(db, userID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response.Tickets[0], nil
+}
+
+func PurchaseTickets(db *gorm.DB, userID uint, req PurchaseTicketRequest) (*PurchaseTicketsResponse, error) {
 	if req.EventID == 0 {
 		return nil, ErrInvalidRequest
 	}
 
-	event, err := dao.FindEventByID(db, req.EventID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrEventNotFound
+	quantity := 1
+	if req.Quantity != nil {
+		quantity = *req.Quantity
+	}
+	if quantity <= 0 {
+		return nil, ErrInvalidTicketQuantity
+	}
+
+	var createdTickets []TicketResponse
+	err := db.Transaction(func(tx *gorm.DB) error {
+		event, err := dao.FindEventByID(tx, req.EventID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEventNotFound
+			}
+			return err
 		}
-		return nil, err
-	}
 
-	if _, err := dao.FindActiveTicketByUserAndEvent(db, userID, req.EventID); err == nil {
-		return nil, ErrTicketAlreadyExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
+		activeTickets, err := dao.CountActiveTicketsByEventID(tx, req.EventID)
+		if err != nil {
+			return err
+		}
 
-	activeTickets, err := dao.CountActiveTicketsByEventID(db, req.EventID)
+		if event.Capacity-int(activeTickets) < quantity {
+			return ErrNoTicketCapacity
+		}
+
+		createdTickets = make([]TicketResponse, 0, quantity)
+		purchaseDate := time.Now()
+		for range quantity {
+			ticket := domain.Ticket{
+				UserID:       userID,
+				EventID:      req.EventID,
+				Status:       ticketStatusActive,
+				PurchaseDate: purchaseDate,
+			}
+
+			if err := dao.CreateTicket(tx, &ticket); err != nil {
+				return err
+			}
+
+			createdTicket, err := dao.FindTicketByID(tx, ticket.ID)
+			if err != nil {
+				return err
+			}
+
+			createdTickets = append(createdTickets, buildTicketResponse(*createdTicket))
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if event.Capacity-int(activeTickets) <= 0 {
-		return nil, ErrNoTicketCapacity
-	}
-
-	ticket := domain.Ticket{
-		UserID:       userID,
-		EventID:      req.EventID,
-		Status:       ticketStatusActive,
-		PurchaseDate: time.Now(),
-	}
-
-	if err := dao.CreateTicket(db, &ticket); err != nil {
-		return nil, err
-	}
-
-	createdTicket, err := dao.FindTicketByID(db, ticket.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	response := buildTicketResponse(*createdTicket)
-	return &response, nil
+	return &PurchaseTicketsResponse{Tickets: createdTickets, Quantity: quantity}, nil
 }
 
 func GetMyTickets(db *gorm.DB, userID uint) ([]TicketResponse, error) {
@@ -149,12 +180,6 @@ func TransferTicket(db *gorm.DB, userID uint, ticketID uint, req TransferTicketR
 
 	if targetUser.ID == userID {
 		return nil, ErrTransferToSameUser
-	}
-
-	if _, err := dao.FindActiveTicketByUserAndEvent(db, targetUser.ID, ticket.EventID); err == nil {
-		return nil, ErrTargetUserAlreadyHasSeat
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
 	}
 
 	ticket.UserID = targetUser.ID

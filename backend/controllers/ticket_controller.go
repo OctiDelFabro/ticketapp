@@ -31,7 +31,7 @@ func (controller *TicketController) Purchase(c *gin.Context) {
 		return
 	}
 
-	response, err := services.PurchaseTicket(controller.db, userID, req)
+	response, err := services.PurchaseTickets(controller.db, userID, req)
 	if err != nil {
 		handleTicketError(c, err)
 		return
@@ -130,7 +130,7 @@ func parseTicketID(c *gin.Context) (uint, error) {
 
 func handleTicketError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, services.ErrInvalidRequest):
+	case errors.Is(err, services.ErrInvalidRequest), errors.Is(err, services.ErrInvalidTicketQuantity):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, services.ErrTicketForbidden):
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})

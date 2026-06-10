@@ -7,7 +7,7 @@ const tabs = [
   { to: '/mis-entradas', label: 'Mis Entradas', icon: '🎟️' },
 ]
 
-export default function BottomNav() {
+export default function BottomNav({ isLoggedIn = false, onLogout }) {
   return (
     <nav className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 gap-1 rounded-2xl border border-ticket-border bg-ticket-card/80 p-2 shadow-glow backdrop-blur-xl">
       {tabs.map((tab) => (
@@ -15,6 +15,11 @@ export default function BottomNav() {
           <span className="text-base">{tab.icon}</span><span>{tab.label}</span>
         </NavLink>
       ))}
+      {isLoggedIn && (
+        <button onClick={onLogout} className="flex min-w-14 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold text-gray-400 transition hover:bg-ticket-card2 hover:text-white sm:min-w-20 sm:px-3" type="button">
+          <span className="text-base">↩</span><span>Salir</span>
+        </button>
+      )}
     </nav>
   )
 }
