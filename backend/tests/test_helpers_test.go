@@ -13,15 +13,14 @@ import (
 	"github.com/OctiDelFabro/ticketapp/backend/routes"
 	"github.com/OctiDelFabro/ticketapp/backend/utils"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
 func newTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	dbName := strings.NewReplacer("/", "_", " ", "_", ":", "_").Replace(t.Name())
-	dsn := fmt.Sprintf("file:%s-%d?mode=memory&cache=shared", dbName, time.Now().UnixNano())
+	dsn := ":memory:?_pragma=foreign_keys(1)"
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	mustNoError(t, err)
 

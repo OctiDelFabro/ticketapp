@@ -11,8 +11,9 @@ El proyecto incorpora pruebas automatizadas para validar la lógica principal de
 
 - Tests unitarios de services para los flujos principales de autenticación, eventos y tickets.
 - Tests de integración HTTP de controllers/routes con `httptest` y el router real de Gin.
-- Base de datos SQLite en memoria solo para tests con GORM.
+- Base de datos SQLite en memoria solo para tests con GORM y un driver pure-Go.
 - Los tests no llaman a `config.ConnectDatabase()`, no leen el `.env` real y no requieren MySQL corriendo.
+- Los tests no requieren CGO ni gcc, por lo que pueden ejecutarse en Windows, macOS y Linux sin compiladores C.
 - Los tests actuales cubren services y controllers principales del flujo cliente.
 
 ## Comandos
