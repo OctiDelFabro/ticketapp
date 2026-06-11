@@ -45,6 +45,7 @@ type TicketResponse struct {
 	ID             uint      `json:"id"`
 	EventID        uint      `json:"event_id"`
 	EventTitle     string    `json:"event_title"`
+	EventImageURL  string    `json:"image_url"`
 	EventStartDate time.Time `json:"event_start_date"`
 	EventLocation  string    `json:"event_location"`
 	Status         string    `json:"status"`
@@ -222,6 +223,7 @@ func buildTicketResponse(ticket domain.Ticket) TicketResponse {
 		ID:             ticket.ID,
 		EventID:        ticket.EventID,
 		EventTitle:     ticket.Event.Title,
+		EventImageURL:  ticket.Event.ImageURL,
 		EventStartDate: ticket.Event.StartDate,
 		EventLocation:  ticket.Event.Location,
 		Status:         ticket.Status,
