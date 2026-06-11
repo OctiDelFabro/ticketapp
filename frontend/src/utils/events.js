@@ -1,6 +1,4 @@
-import heroImage from '../assets/hero.png'
-
-export const fallbackEventImage = heroImage
+export const fallbackEventImage = '/events/default.jpg'
 
 const dateFormatter = new Intl.DateTimeFormat('es-AR', {
   day: 'numeric',
