@@ -23,6 +23,7 @@
 - `start_date`
 - `duration_minutes`
 - `capacity`
+- `price` (valor de entrada general en ARS, `not null`, default `0`)
 - `active`
 - `created_at`
 - `updated_at`

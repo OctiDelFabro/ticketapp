@@ -5,6 +5,7 @@ import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import { getEventById } from '../services/api.js'
 import { isAuthenticated } from '../utils/auth.js'
+import { formatPrice } from '../utils/formatters.js'
 import { formatDuration, formatEventDate, formatEventTime, getEventImage, normalizeCartEvent } from '../utils/events.js'
 
 export default function EventDetail({ onAddToCart }) {
@@ -95,6 +96,7 @@ export default function EventDetail({ onAddToCart }) {
                 <p>Duración: <b className="text-white">{formatDuration(event.duration_minutes)}</b></p>
                 <p>Capacidad total: <b className="text-white">{event.capacity}</b></p>
                 <p>Disponibles: <b className="text-white">{event.available_capacity}</b></p>
+                <p>Entrada general: <b className="text-white">{formatPrice(event.price)}</b></p>
               </div>
             </section>
             <section className="glass-card overflow-hidden rounded-3xl"><img src={getEventImage(event)} alt={event.location} className="h-64 w-full object-cover opacity-80" /><div className="p-6 sm:p-8"><h2 className="text-2xl font-black">Venue</h2><p className="mt-3 text-lg text-violet-200">{event.location}</p><p className="mt-1 text-gray-400">{formatEventDate(event.start_date)} · {formatEventTime(event.start_date)}</p></div></section>
@@ -102,13 +104,14 @@ export default function EventDetail({ onAddToCart }) {
 
           <aside className="h-fit rounded-3xl border border-ticket-purple2/35 bg-ticket-card p-6 shadow-glow lg:sticky lg:top-8">
             <h2 className="text-2xl font-black">Comprar entrada</h2>
-            <div className="mt-5 rounded-2xl border border-ticket-border bg-ticket-card2 p-4"><div className="flex justify-between"><div><p className="font-black">General</p><p className="text-sm text-gray-400">Acceso general</p></div><p className="text-xl font-black text-violet-200">Disponible</p></div></div>
+            <div className="mt-5 rounded-2xl border border-ticket-border bg-ticket-card2 p-4"><div className="flex justify-between"><div><p className="font-black">General</p><p className="text-sm text-gray-400">Acceso general</p></div><p className="text-xl font-black text-violet-200">{formatPrice(event.price)}</p></div></div>
             <div className="my-6 space-y-4 border-y border-ticket-border py-5">
               <label className="block">
                 <span className="text-sm font-bold text-gray-300">Cantidad</span>
                 <input className="input-dark mt-2" min="1" max={event.available_capacity} onChange={(inputEvent) => updateQuantity(inputEvent.target.value)} type="number" value={selectedQuantity} />
               </label>
-              <div className="flex justify-between text-gray-300"><span>General × {selectedQuantity}</span><span>{selectedQuantity === 1 ? 'Entrada' : 'Entradas'}</span></div>
+              <div className="flex justify-between text-gray-300"><span>General × {selectedQuantity}</span><span>{formatPrice(event.price)}</span></div>
+              <div className="flex justify-between text-xl font-black"><span>Total</span><span>{formatPrice((Number(event.price) || 0) * selectedQuantity)}</span></div>
               <div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div>
             </div>
             <Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
