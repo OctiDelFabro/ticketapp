@@ -317,14 +317,6 @@ Transfiere una entrada activa propia a otro usuario existente. Mantiene el `stat
 
 > Las respuestas de tickets no devuelven objetos GORM completos ni `password_hash`.
 
-## Admin
-
-Funcionalidades planificadas para una etapa posterior:
-
-- `POST /api/admin/events`
-- `PUT /api/admin/events/:id`
-- `DELETE /api/admin/events/:id`
-- `GET /api/admin/events/:id/report`
 
 ## Admin endpoints
 

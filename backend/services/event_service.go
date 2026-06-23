@@ -39,7 +39,7 @@ type CreateEventRequest struct {
 	StartDate       time.Time `json:"start_date"`
 	DurationMinutes int       `json:"duration_minutes"`
 	Capacity        int       `json:"capacity"`
-	Active          bool      `json:"active"`
+	Active          *bool     `json:"active"`
 }
 
 type UpdateEventRequest struct {
@@ -101,6 +101,11 @@ func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
 		return nil, ErrInvalidEventRequest
 	}
 
+	active := true
+	if req.Active != nil {
+		active = *req.Active
+	}
+
 	event := domain.Event{
 		Title:           req.Title,
 		Description:     req.Description,
@@ -110,7 +115,7 @@ func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
 		StartDate:       req.StartDate,
 		DurationMinutes: req.DurationMinutes,
 		Capacity:        req.Capacity,
-		Active:          req.Active,
+		Active:          active,
 	}
 
 	if err := dao.CreateEvent(db, &event); err != nil {
