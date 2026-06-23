@@ -424,3 +424,128 @@ Deshabilita un evento con borrado lógico (`active = false`). No borra físicame
 - `403 Forbidden`: el usuario autenticado no tiene rol `ADMIN`.
 - `404 Not Found`: el evento no existe.
 - `500 Internal Server Error`: error interno.
+
+## Admin stats endpoints
+
+Los endpoints administrativos de estadísticas requieren autenticación JWT con un usuario de rol `ADMIN`:
+
+```http
+Authorization: Bearer <token>
+```
+
+Usuario demo admin: `admin@test.com` / `123456`.
+
+> `estimated_revenue` está expresado en ARS. Es un valor estimado porque se calcula con los tickets en estado `ACTIVE` y el precio actual del evento (`event.price`); esta PR no guarda precio histórico por ticket. Los tickets `CANCELLED` no cuentan para ingresos.
+
+### `GET /api/admin/stats/summary`
+
+Devuelve estadísticas generales del sistema.
+
+#### Response `200 OK`
+
+```json
+{
+  "total_users": 4,
+  "client_users": 3,
+  "admin_users": 1,
+  "total_events": 5,
+  "active_events": 4,
+  "inactive_events": 1,
+  "total_tickets": 10,
+  "active_tickets": 8,
+  "cancelled_tickets": 2,
+  "total_capacity": 490,
+  "available_capacity": 482,
+  "occupancy_rate_percent": 1.63,
+  "estimated_revenue": 120000
+}
+```
+
+#### Reglas
+
+- `total_capacity` suma la capacidad de eventos activos.
+- `available_capacity` suma los cupos disponibles de eventos activos.
+- `occupancy_rate_percent` se calcula como `active_tickets / total_capacity * 100`; si `total_capacity` es `0`, devuelve `0`.
+- `estimated_revenue` suma `event.price` por cada ticket `ACTIVE`.
+
+#### Errores
+
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `403 Forbidden`: usuario autenticado sin rol `ADMIN`.
+- `500 Internal Server Error`: error interno.
+
+### `GET /api/admin/stats/events`
+
+Devuelve estadísticas por evento. Incluye eventos activos e inactivos y ordena por `event_id` ascendente.
+
+#### Response `200 OK`
+
+```json
+[
+  {
+    "event_id": 1,
+    "title": "Rock Nacional",
+    "category": "Música",
+    "location": "Córdoba",
+    "active": true,
+    "capacity": 100,
+    "price": 15000,
+    "active_tickets": 20,
+    "cancelled_tickets": 3,
+    "total_tickets": 23,
+    "available_capacity": 80,
+    "occupancy_rate_percent": 20,
+    "estimated_revenue": 300000
+  }
+]
+```
+
+#### Reglas
+
+- `active_tickets` cuenta tickets `ACTIVE` del evento.
+- `cancelled_tickets` cuenta tickets `CANCELLED` del evento.
+- `total_tickets` cuenta todos los tickets del evento.
+- `available_capacity` se calcula como `capacity - active_tickets`; si da negativo, devuelve `0`.
+- `occupancy_rate_percent` se calcula como `active_tickets / capacity * 100`; si `capacity` es `0`, devuelve `0`.
+- `estimated_revenue` se calcula como `active_tickets * event.price`.
+
+#### Errores
+
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `403 Forbidden`: usuario autenticado sin rol `ADMIN`.
+- `500 Internal Server Error`: error interno.
+
+### `GET /api/admin/events/:id/report`
+
+Devuelve el reporte detallado de un evento específico, activo o inactivo.
+
+#### Response `200 OK`
+
+```json
+{
+  "event_id": 1,
+  "title": "Rock Nacional",
+  "description": "Evento de música rock nacional.",
+  "category": "Música",
+  "location": "Córdoba",
+  "start_date": "2026-09-12T21:00:00Z",
+  "duration_minutes": 120,
+  "active": true,
+  "capacity": 100,
+  "price": 15000,
+  "active_tickets": 20,
+  "cancelled_tickets": 3,
+  "total_tickets": 23,
+  "available_capacity": 80,
+  "occupancy_rate_percent": 20,
+  "estimated_revenue": 300000
+}
+```
+
+#### Errores
+
+- `400 Bad Request`: id inválido.
+- `401 Unauthorized`: token faltante, inválido o expirado.
+- `403 Forbidden`: usuario autenticado sin rol `ADMIN`.
+- `404 Not Found`: evento inexistente.
+- `500 Internal Server Error`: error interno.
