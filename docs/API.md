@@ -88,7 +88,7 @@ Autentica un usuario existente con email y contraseña.
 
 ## Eventos públicos
 
-Los endpoints públicos de eventos no requieren JWT y devuelven solamente eventos activos.
+Los endpoints públicos de eventos no requieren JWT y devuelven solamente eventos activos. El campo `price` representa el valor de una entrada general expresado en ARS.
 
 ### `GET /api/events`
 
@@ -121,6 +121,7 @@ Lista el catálogo público de eventos activos.
     "start_date": "2026-09-12T21:00:00Z",
     "duration_minutes": 120,
     "capacity": 100,
+    "price": 15000,
     "available_capacity": 100,
     "active": true
   }
@@ -149,6 +150,7 @@ Devuelve el detalle público de un evento activo.
   "start_date": "2026-09-12T21:00:00Z",
   "duration_minutes": 120,
   "capacity": 100,
+  "price": 15000,
   "available_capacity": 100,
   "active": true
 }
@@ -193,6 +195,7 @@ Compra una entrada para el usuario autenticado.
   "event_title": "Rock Nacional",
   "event_start_date": "2026-09-12T21:00:00Z",
   "event_location": "Córdoba",
+  "event_price": 15000,
   "status": "ACTIVE",
   "purchase_date": "2026-06-05T12:00:00Z",
   "user_id": 1,
@@ -229,6 +232,7 @@ Lista las entradas del usuario autenticado, ordenadas por `purchase_date` descen
     "event_title": "Rock Nacional",
     "event_start_date": "2026-09-12T21:00:00Z",
     "event_location": "Córdoba",
+    "event_price": 15000,
     "status": "ACTIVE",
     "purchase_date": "2026-06-05T12:00:00Z",
     "user_id": 1,
@@ -255,6 +259,7 @@ Cancela una entrada activa propia. No elimina físicamente el registro: cambia `
   "event_title": "Rock Nacional",
   "event_start_date": "2026-09-12T21:00:00Z",
   "event_location": "Córdoba",
+  "event_price": 15000,
   "status": "CANCELLED",
   "purchase_date": "2026-06-05T12:00:00Z",
   "user_id": 1,
@@ -292,6 +297,7 @@ Transfiere una entrada activa propia a otro usuario existente. Mantiene el `stat
   "event_title": "Rock Nacional",
   "event_start_date": "2026-09-12T21:00:00Z",
   "event_location": "Córdoba",
+  "event_price": 15000,
   "status": "ACTIVE",
   "purchase_date": "2026-06-05T12:00:00Z",
   "user_id": 2,
@@ -315,7 +321,7 @@ Transfiere una entrada activa propia a otro usuario existente. Mantiene el `stat
 - `409 Conflict`: el ticket no está activo, el destino es el mismo usuario, o el destino ya tiene ticket activo para el evento.
 - `500 Internal Server Error`: error interno.
 
-> Las respuestas de tickets no devuelven objetos GORM completos ni `password_hash`.
+> Las respuestas de tickets no devuelven objetos GORM completos ni `password_hash`. `event_price` corresponde al precio actual del evento asociado y está expresado en ARS.
 
 
 ## Admin endpoints
@@ -340,6 +346,7 @@ Crea un evento nuevo.
   "start_date": "2026-12-10T21:00:00Z",
   "duration_minutes": 120,
   "capacity": 100,
+  "price": 15000,
   "active": true
 }
 ```
@@ -349,6 +356,7 @@ Crea un evento nuevo.
 - `title`, `description`, `category`, `location` y `start_date` son requeridos.
 - `duration_minutes` debe ser mayor a `0`.
 - `capacity` debe ser mayor a `0`.
+- `price` es opcional, queda en `0` si se omite y debe ser mayor o igual a `0`.
 
 #### Response `201 Created`
 
@@ -375,12 +383,14 @@ Actualiza parcialmente un evento existente.
 - `start_date`
 - `duration_minutes`
 - `capacity`
+- `price`
 - `active`
 
 #### Reglas
 
 - Si se envía `duration_minutes`, debe ser mayor a `0`.
 - Si se envía `capacity`, debe ser mayor a `0`.
+- Si se envía `price`, debe ser mayor o igual a `0`.
 - `capacity` no puede ser menor que la cantidad de tickets `ACTIVE` vendidos para el evento.
 
 #### Response `200 OK`

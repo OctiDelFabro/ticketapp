@@ -1,3 +1,5 @@
+import { normalizePrice } from './formatters.js'
+
 export const fallbackEventImage = '/events/default.jpg'
 
 const dateFormatter = new Intl.DateTimeFormat('es-AR', {
@@ -43,5 +45,5 @@ export const normalizeCartEvent = (event) => ({
   time: formatEventTime(event?.start_date),
   venue: event?.location || 'Lugar a confirmar',
   city: '',
-  price: event?.price ?? 0,
+  price: normalizePrice(event?.price),
 })

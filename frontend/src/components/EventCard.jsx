@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import Badge from './Badge.jsx'
 import Button from './Button.jsx'
+import { formatPrice } from '../utils/formatters.js'
 import { formatEventDate, formatEventTime, getEventImage } from '../utils/events.js'
 
 export default function EventCard({ event, compact = false }) {
@@ -17,7 +18,7 @@ export default function EventCard({ event, compact = false }) {
         <p className="mt-2 text-sm font-bold text-violet-200">{formatEventDate(event.start_date)} · {formatEventTime(event.start_date)}</p>
         <p className="mt-1 text-sm text-gray-400">{event.location}</p>
         <div className="mt-5 flex items-end justify-between gap-3">
-          <div><p className="text-xs uppercase tracking-widest text-gray-500">Tipo</p><p className="text-2xl font-black text-white">General</p></div>
+          <div><p className="text-xs uppercase tracking-widest text-gray-500">Desde</p><p className="text-2xl font-black text-white">{formatPrice(event.price)}</p><p className="text-xs text-gray-500">Entrada general</p></div>
           {!compact && <Button onClick={(e) => { e.stopPropagation(); navigate(`/evento/${event.id}`) }} className="px-4 py-2">Comprar</Button>}
         </div>
       </div>

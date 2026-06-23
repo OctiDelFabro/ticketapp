@@ -12,6 +12,7 @@ type Event struct {
 	StartDate       time.Time `gorm:"not null"`
 	DurationMinutes int       `gorm:"not null"`
 	Capacity        int       `gorm:"not null"`
+	Price           float64   `json:"price" gorm:"not null;default:0"`
 	Active          bool      `gorm:"not null;default:true"`
 	Tickets         []Ticket
 	CreatedAt       time.Time

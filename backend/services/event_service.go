@@ -26,6 +26,7 @@ type EventResponse struct {
 	StartDate         time.Time `json:"start_date"`
 	DurationMinutes   int       `json:"duration_minutes"`
 	Capacity          int       `json:"capacity"`
+	Price             float64   `json:"price"`
 	AvailableCapacity int       `json:"available_capacity"`
 	Active            bool      `json:"active"`
 }
@@ -39,6 +40,7 @@ type CreateEventRequest struct {
 	StartDate       time.Time `json:"start_date"`
 	DurationMinutes int       `json:"duration_minutes"`
 	Capacity        int       `json:"capacity"`
+	Price           float64   `json:"price"`
 	Active          *bool     `json:"active"`
 }
 
@@ -51,6 +53,7 @@ type UpdateEventRequest struct {
 	StartDate       *time.Time `json:"start_date"`
 	DurationMinutes *int       `json:"duration_minutes"`
 	Capacity        *int       `json:"capacity"`
+	Price           *float64   `json:"price"`
 	Active          *bool      `json:"active"`
 }
 
@@ -97,6 +100,10 @@ func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
 	req.Location = strings.TrimSpace(req.Location)
 	req.ImageURL = strings.TrimSpace(req.ImageURL)
 
+	if req.Price < 0 {
+		return nil, ErrInvalidEventRequest
+	}
+
 	if req.Title == "" || req.Description == "" || req.Category == "" || req.Location == "" || req.StartDate.IsZero() || req.DurationMinutes <= 0 || req.Capacity <= 0 {
 		return nil, ErrInvalidEventRequest
 	}
@@ -115,6 +122,7 @@ func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
 		StartDate:       req.StartDate,
 		DurationMinutes: req.DurationMinutes,
 		Capacity:        req.Capacity,
+		Price:           req.Price,
 		Active:          active,
 	}
 
@@ -179,6 +187,12 @@ func UpdateEvent(db *gorm.DB, id uint, req UpdateEventRequest) (*EventResponse, 
 			}
 			event.Capacity = *req.Capacity
 		}
+		if req.Price != nil {
+			if *req.Price < 0 {
+				return ErrInvalidEventRequest
+			}
+			event.Price = *req.Price
+		}
 		if req.Active != nil {
 			event.Active = *req.Active
 		}
@@ -237,6 +251,7 @@ func buildEventResponse(db *gorm.DB, event domain.Event) (EventResponse, error) 
 		StartDate:         event.StartDate,
 		DurationMinutes:   event.DurationMinutes,
 		Capacity:          event.Capacity,
+		Price:             event.Price,
 		AvailableCapacity: availableCapacity,
 		Active:            event.Active,
 	}, nil

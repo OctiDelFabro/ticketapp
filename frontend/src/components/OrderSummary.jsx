@@ -1,6 +1,9 @@
 import Button from './Button.jsx'
+import { formatPrice, normalizePrice } from '../utils/formatters.js'
 
-export default function OrderSummary({ event, quantity, buttonText, onNext, onRemove, disabled = false }) {
+export default function OrderSummary({ event, quantity = 1, buttonText, onNext, onRemove, disabled = false }) {
+  const eventPrice = normalizePrice(event?.price)
+  const total = eventPrice * quantity
   const eventPath = event ? `/evento/${event.id}` : '/'
 
   if (!event) {
@@ -31,13 +34,13 @@ export default function OrderSummary({ event, quantity, buttonText, onNext, onRe
       </div>
       <div className="my-5 space-y-3 border-y border-ticket-border py-5 text-sm">
         <div className="flex justify-between text-gray-300">
-          <span>General x {quantity}</span>
-          <span>Entrada</span>
+          <span>Entrada general x {quantity}</span>
+          <span>{formatPrice(eventPrice)}</span>
         </div>
       </div>
       <div className="mb-5 flex justify-between text-xl font-black">
-        <span>Total de entradas</span>
-        <span className="text-violet-200">{quantity}</span>
+        <span>Total</span>
+        <span className="text-violet-200">{formatPrice(total)}</span>
       </div>
       <Button onClick={onRemove} variant="danger" className="mb-3 w-full" disabled={disabled}>Quitar del carrito</Button>
       {buttonText && <Button onClick={onNext} className="w-full" disabled={disabled}>{buttonText}</Button>}

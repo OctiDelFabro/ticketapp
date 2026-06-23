@@ -27,6 +27,7 @@ func SeedEvents(db *gorm.DB) error {
 			StartDate:       time.Date(2026, time.September, 12, 21, 0, 0, 0, time.Local),
 			DurationMinutes: 120,
 			Capacity:        100,
+			Price:           15000,
 			Active:          true,
 		},
 		{
@@ -37,6 +38,7 @@ func SeedEvents(db *gorm.DB) error {
 			StartDate:       time.Date(2026, time.October, 3, 20, 30, 0, 0, time.Local),
 			DurationMinutes: 90,
 			Capacity:        80,
+			Price:           8000,
 			Active:          true,
 		},
 		{
@@ -47,6 +49,7 @@ func SeedEvents(db *gorm.DB) error {
 			StartDate:       time.Date(2026, time.November, 7, 15, 0, 0, 0, time.Local),
 			DurationMinutes: 180,
 			Capacity:        150,
+			Price:           20000,
 			Active:          true,
 		},
 		{
@@ -57,6 +60,7 @@ func SeedEvents(db *gorm.DB) error {
 			StartDate:       time.Date(2026, time.December, 5, 19, 0, 0, 0, time.Local),
 			DurationMinutes: 100,
 			Capacity:        60,
+			Price:           10000,
 			Active:          true,
 		},
 	}
@@ -65,6 +69,11 @@ func SeedEvents(db *gorm.DB) error {
 		var existing domain.Event
 		err := db.Where("title = ?", event.Title).First(&existing).Error
 		if err == nil {
+			if existing.Price == 0 && event.Price > 0 {
+				if err := db.Model(&existing).Update("price", event.Price).Error; err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

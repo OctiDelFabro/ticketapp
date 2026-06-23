@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AlertMessage from './AlertMessage.jsx'
 import Badge from './Badge.jsx'
 import Button from './Button.jsx'
+import { formatPrice } from '../utils/formatters.js'
 import { formatEventDate, formatEventTime, getEventImage } from '../utils/events.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -12,6 +13,7 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
   const [emailError, setEmailError] = useState('')
   const isActive = ticket.status === 'ACTIVE'
   const imageSrc = getEventImage(ticket)
+  const ticketPrice = ticket.event_price ?? ticket.event?.price
 
   const submitTransfer = () => {
     if (disabled) return
@@ -44,6 +46,7 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
             <p>Compra: <span className="font-bold text-white">{formatEventDate(ticket.purchase_date)}</span></p>
             <p>Email: <span className="font-bold text-white">{ticket.user_email}</span></p>
             <p>Tipo: <span className="font-bold text-white">General</span></p>
+            <p>Precio: <span className="font-bold text-white">{ticketPrice === undefined || ticketPrice === null ? 'Precio no disponible' : formatPrice(ticketPrice)}</span></p>
           </div>
           {isActive && <div className="mt-5 flex flex-wrap gap-3"><Button onClick={() => onCancel(ticket.id)} variant="danger" type="button" disabled={disabled}>{cancelling ? 'Cancelando entrada...' : '× Cancelar'}</Button><Button onClick={toggleTransfer} variant="secondary" type="button" disabled={disabled}>{transferring ? 'Transfiriendo entrada...' : 'Transferir'}</Button></div>}
           {isActive && showTransfer && (

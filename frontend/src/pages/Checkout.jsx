@@ -6,6 +6,7 @@ import CheckoutProgress from '../components/CheckoutProgress.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import { purchaseTicket } from '../services/api.js'
 import { getStoredUser, isAuthenticated } from '../utils/auth.js'
+import { formatPrice } from '../utils/formatters.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phonePattern = /^\+?[\d\s]{8,20}$/
@@ -164,7 +165,7 @@ export default function Checkout({ cartItem, setCartItem }) {
                         <span className="font-black">General</span>
                         <span className="font-black text-violet-200">Entrada</span>
                       </div>
-                      <p className="mt-2 text-sm text-gray-400">El backend emite una entrada general por compra.</p>
+                      <p className="mt-2 text-sm text-gray-400">Precio unitario: {formatPrice(event.price)}. El backend emite una entrada general por compra.</p>
                     </div>
                   </div>
                 </>
@@ -233,6 +234,7 @@ export default function Checkout({ cartItem, setCartItem }) {
                 <p>Lugar: <b className="text-white">{confirmedTickets[0]?.event_location ?? confirmedEvent?.venue}</b></p>
                 <p>Cantidad: <b className="text-white">{confirmedTickets.length || quantity}</b></p>
                 <p>Tipo de entrada: <b className="text-white">General</b></p>
+                <p>Total: <b className="text-white">{formatPrice((confirmedTickets[0]?.event_price ?? confirmedEvent?.price ?? 0) * (confirmedTickets.length || quantity))}</b></p>
               </div>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-4">

@@ -48,6 +48,7 @@ type TicketResponse struct {
 	EventImageURL  string    `json:"image_url"`
 	EventStartDate time.Time `json:"event_start_date"`
 	EventLocation  string    `json:"event_location"`
+	EventPrice     float64   `json:"event_price"`
 	Status         string    `json:"status"`
 	PurchaseDate   time.Time `json:"purchase_date"`
 	UserID         uint      `json:"user_id"`
@@ -226,6 +227,7 @@ func buildTicketResponse(ticket domain.Ticket) TicketResponse {
 		EventImageURL:  ticket.Event.ImageURL,
 		EventStartDate: ticket.Event.StartDate,
 		EventLocation:  ticket.Event.Location,
+		EventPrice:     ticket.Event.Price,
 		Status:         ticket.Status,
 		PurchaseDate:   ticket.PurchaseDate,
 		UserID:         ticket.UserID,
