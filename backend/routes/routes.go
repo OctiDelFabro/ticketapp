@@ -10,6 +10,7 @@ import (
 func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	authController := controllers.NewAuthController(db)
 	eventController := controllers.NewEventController(db)
+	adminEventController := controllers.NewAdminEventController(db)
 	ticketController := controllers.NewTicketController(db)
 
 	router.GET("/api/health", controllers.HealthCheck)
@@ -24,4 +25,11 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	tickets.GET("/me", ticketController.GetMyTickets)
 	tickets.PATCH("/:id/cancel", ticketController.Cancel)
 	tickets.PATCH("/:id/transfer", ticketController.Transfer)
+
+	adminEvents := router.Group("/api/admin/events")
+	adminEvents.Use(middlewares.AuthMiddleware(), middlewares.AdminMiddleware())
+	adminEvents.GET("", adminEventController.ListEvents)
+	adminEvents.POST("", adminEventController.CreateEvent)
+	adminEvents.PATCH("/:id", adminEventController.UpdateEvent)
+	adminEvents.DELETE("/:id", adminEventController.DeleteEvent)
 }

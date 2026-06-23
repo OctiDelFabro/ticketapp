@@ -325,3 +325,100 @@ Funcionalidades planificadas para una etapa posterior:
 - `PUT /api/admin/events/:id`
 - `DELETE /api/admin/events/:id`
 - `GET /api/admin/events/:id/report`
+
+## Admin endpoints
+
+Los endpoints de administración requieren el header `Authorization: Bearer <token>` con un JWT de un usuario con rol `ADMIN`. Para desarrollo local existe el usuario demo `admin@test.com` / `123456`.
+
+> El usuario admin demo es solo para desarrollo local.
+
+### `POST /api/admin/events`
+
+Crea un evento nuevo.
+
+#### Request
+
+```json
+{
+  "title": "Nombre del evento",
+  "description": "Descripción",
+  "image_url": "https://...",
+  "category": "Música",
+  "location": "Córdoba",
+  "start_date": "2026-12-10T21:00:00Z",
+  "duration_minutes": 120,
+  "capacity": 100,
+  "active": true
+}
+```
+
+#### Reglas
+
+- `title`, `description`, `category`, `location` y `start_date` son requeridos.
+- `duration_minutes` debe ser mayor a `0`.
+- `capacity` debe ser mayor a `0`.
+
+#### Response `201 Created`
+
+Devuelve el evento creado con `available_capacity`.
+
+#### Errores
+
+- `400 Bad Request`: request inválido o validaciones fallidas.
+- `401 Unauthorized`: falta autenticación.
+- `403 Forbidden`: el usuario autenticado no tiene rol `ADMIN`.
+- `500 Internal Server Error`: error interno.
+
+### `PATCH /api/admin/events/:id`
+
+Actualiza parcialmente un evento existente.
+
+#### Campos editables
+
+- `title`
+- `description`
+- `image_url`
+- `category`
+- `location`
+- `start_date`
+- `duration_minutes`
+- `capacity`
+- `active`
+
+#### Reglas
+
+- Si se envía `duration_minutes`, debe ser mayor a `0`.
+- Si se envía `capacity`, debe ser mayor a `0`.
+- `capacity` no puede ser menor que la cantidad de tickets `ACTIVE` vendidos para el evento.
+
+#### Response `200 OK`
+
+Devuelve el evento actualizado.
+
+#### Errores
+
+- `400 Bad Request`: id inválido, request inválido o validaciones fallidas.
+- `401 Unauthorized`: falta autenticación.
+- `403 Forbidden`: el usuario autenticado no tiene rol `ADMIN`.
+- `404 Not Found`: el evento no existe.
+- `500 Internal Server Error`: error interno.
+
+### `DELETE /api/admin/events/:id`
+
+Deshabilita un evento con borrado lógico (`active = false`). No borra físicamente el registro.
+
+#### Response `200 OK`
+
+```json
+{
+  "message": "event disabled successfully"
+}
+```
+
+#### Errores
+
+- `400 Bad Request`: id inválido.
+- `401 Unauthorized`: falta autenticación.
+- `403 Forbidden`: el usuario autenticado no tiene rol `ADMIN`.
+- `404 Not Found`: el evento no existe.
+- `500 Internal Server Error`: error interno.
