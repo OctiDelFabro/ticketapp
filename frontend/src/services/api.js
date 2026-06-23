@@ -77,4 +77,6 @@ export const getAdminEvents = async (params) => {
 export const createAdminEvent = (payload) => request('/admin/events', { method: 'POST', body: payload, auth: true })
 export const updateAdminEvent = (id, payload) => request(`/admin/events/${id}`, { method: 'PATCH', body: payload, auth: true })
 export const deleteAdminEvent = (id) => request(`/admin/events/${id}`, { method: 'DELETE', auth: true })
+export const getAdminStatsSummary = async () => normalizeObjectResponse(await request('/admin/stats/summary', { auth: true }), 'summary')
+export const getAdminEventStats = async () => normalizeListResponse(await request('/admin/stats/events', { auth: true }), 'events')
 export const getAdminEventReport = async (id) => normalizeObjectResponse(await request(`/admin/events/${id}/report`, { auth: true }), 'report')
