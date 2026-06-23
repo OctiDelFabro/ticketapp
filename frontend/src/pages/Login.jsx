@@ -4,6 +4,7 @@ import AlertMessage from '../components/AlertMessage.jsx'
 import Button from '../components/Button.jsx'
 import Logo from '../components/Logo.jsx'
 import { login, register } from '../services/api.js'
+import { isAdminUser } from '../utils/admin.js'
 import { saveAuthSession } from '../utils/auth.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -63,7 +64,8 @@ export default function Login({ setIsLoggedIn }) {
       saveAuthSession(response)
       setIsLoggedIn(true)
       setFeedback(mode === 'register' ? 'Cuenta creada correctamente.' : 'Inicio de sesión exitoso.')
-      window.setTimeout(() => navigate('/'), 900)
+      const redirectTo = isAdminUser(response?.user) ? '/admin/eventos' : '/'
+      window.setTimeout(() => navigate(redirectTo), 900)
     } catch (err) {
       setSubmitError(getFriendlyAuthError(err.message, mode))
     } finally {
