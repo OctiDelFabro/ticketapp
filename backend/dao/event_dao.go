@@ -50,3 +50,20 @@ func FindEventByID(db *gorm.DB, id uint) (*domain.Event, error) {
 
 	return &event, nil
 }
+
+func FindEventByIDIncludingInactive(db *gorm.DB, id uint) (*domain.Event, error) {
+	var event domain.Event
+	if err := db.First(&event, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &event, nil
+}
+
+func CreateEvent(db *gorm.DB, event *domain.Event) error {
+	return db.Create(event).Error
+}
+
+func UpdateEvent(db *gorm.DB, event *domain.Event) error {
+	return db.Save(event).Error
+}

@@ -12,6 +12,7 @@ import (
 const (
 	demoPassword       = "123456"
 	demoClientRole     = "CLIENT"
+	demoAdminRole      = "ADMIN"
 	ticketStatusActive = "ACTIVE"
 	ticketStatusCancel = "CANCELLED"
 )
@@ -86,10 +87,13 @@ func SeedDemoData(db *gorm.DB) error {
 }
 
 func SeedDemoUsers(db *gorm.DB) error {
+	// Development-only demo users. Existing accounts are left untouched so
+	// passwords are never overwritten by the local seed process.
 	demoUsers := []domain.User{
 		{Name: "Lorenzo", Email: "lorenzo@test.com", Role: demoClientRole},
 		{Name: "Pablo", Email: "pablo@test.com", Role: demoClientRole},
 		{Name: "Octavio", Email: "octavio@test.com", Role: demoClientRole},
+		{Name: "Admin", Email: "admin@test.com", Role: demoAdminRole},
 	}
 
 	for _, demoUser := range demoUsers {

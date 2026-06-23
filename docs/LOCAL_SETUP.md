@@ -70,7 +70,13 @@ Podés iniciar sesión con estos usuarios cliente:
 | Pablo | `pablo@test.com` | `123456` |
 | Octavio | `octavio@test.com` | `123456` |
 
-Estas credenciales son solo para desarrollo local.
+Usuario administrador demo:
+
+| Nombre | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@test.com` | `123456` |
+
+Estas credenciales son solo para desarrollo local. El usuario admin demo existe únicamente para desarrollo local.
 
 Los tickets demo incluyen:
 
