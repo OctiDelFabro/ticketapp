@@ -10,7 +10,16 @@ const getErrorMessage = (payload, fallback) => {
   return payload.error || payload.message || fallback
 }
 
-async function request(path, { method = 'GET', body, auth = false, params } = {}) {
+const normalizeListResponse = (payload, key) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.[key])) return payload[key]
+  if (Array.isArray(payload?.data)) return payload.data
+  return []
+}
+
+const normalizeObjectResponse = (payload, key) => payload?.[key] ?? payload?.data ?? payload ?? {}
+
+export async function request(path, { method = 'GET', body, auth = false, params } = {}) {
   const url = new URL(`${API_BASE_URL}${path}`)
 
   if (params) {
@@ -37,7 +46,9 @@ async function request(path, { method = 'GET', body, auth = false, params } = {}
   const payload = contentType.includes('application/json') ? await response.json() : null
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(payload, 'No pudimos completar la operación.'))
+    const error = new Error(getErrorMessage(payload, 'No pudimos completar la operación.'))
+    error.status = response.status
+    throw error
   }
 
   return payload
@@ -51,3 +62,19 @@ export const purchaseTicket = (eventId, quantity = 1) => request('/tickets/purch
 export const getMyTickets = () => request('/tickets/me', { auth: true })
 export const cancelTicket = (ticketId) => request(`/tickets/${ticketId}/cancel`, { method: 'PATCH', auth: true })
 export const transferTicket = (ticketId, targetEmail) => request(`/tickets/${ticketId}/transfer`, { method: 'PATCH', body: { target_email: targetEmail }, auth: true })
+
+
+// Admin endpoints expected by the forthcoming backend. getAdminEvents falls back to /events
+// so the admin shell can render read-only listings while /admin/events is unavailable.
+export const getAdminEvents = async (params) => {
+  try {
+    return normalizeListResponse(await request('/admin/events', { params, auth: true }), 'events')
+  } catch (error) {
+    if (error.status !== 404 && !/not found|404/i.test(error.message)) throw error
+    return normalizeListResponse(await request('/events', { params }), 'events')
+  }
+}
+export const createAdminEvent = (payload) => request('/admin/events', { method: 'POST', body: payload, auth: true })
+export const updateAdminEvent = (id, payload) => request(`/admin/events/${id}`, { method: 'PATCH', body: payload, auth: true })
+export const deleteAdminEvent = (id) => request(`/admin/events/${id}`, { method: 'DELETE', auth: true })
+export const getAdminEventReport = async (id) => normalizeObjectResponse(await request(`/admin/events/${id}/report`, { auth: true }), 'report')
