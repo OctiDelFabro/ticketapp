@@ -26,3 +26,15 @@ El precio aparece en:
 - Detalle del evento.
 - Checkout, usando `event.price` para el precio unitario y el total.
 - Mis Entradas, usando `event_price` del ticket o un fallback compatible si no está disponible.
+
+## Panel admin de reportes
+
+El panel admin de reportes consume endpoints reales del backend y requiere un usuario con rol `ADMIN`.
+
+Endpoints usados:
+
+- `GET /api/admin/stats/summary`: métricas generales de usuarios, eventos, tickets, capacidad, ocupación e ingresos estimados.
+- `GET /api/admin/stats/events`: métricas agregadas por evento para listar reportes.
+- `GET /api/admin/events/:id/report`: detalle de estadísticas de un evento específico.
+
+Los ingresos mostrados en reportes son estimados y vienen calculados por el backend usando tickets `ACTIVE` y el precio actual del evento. Los tickets `CANCELLED` no suman ingresos.
