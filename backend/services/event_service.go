@@ -14,7 +14,20 @@ var (
 	ErrEventNotFound        = errors.New("event not found")
 	ErrInvalidEventRequest  = errors.New("invalid event request")
 	ErrCapacityBelowTickets = errors.New("capacity cannot be lower than active tickets sold")
+	ErrInvalidEventCategory = errors.New("category must be one of: Música, Teatro, Deportes, Tecnología, Otros")
 )
+
+var AllowedEventCategories = []string{"Música", "Teatro", "Deportes", "Tecnología", "Otros"}
+
+func IsAllowedEventCategory(category string) bool {
+	category = strings.TrimSpace(category)
+	for _, allowed := range AllowedEventCategories {
+		if category == allowed {
+			return true
+		}
+	}
+	return false
+}
 
 type EventResponse struct {
 	ID                uint      `json:"id"`
@@ -28,6 +41,7 @@ type EventResponse struct {
 	Capacity          int       `json:"capacity"`
 	Price             float64   `json:"price"`
 	AvailableCapacity int       `json:"available_capacity"`
+	TicketsSold       int       `json:"tickets_sold"`
 	Active            bool      `json:"active"`
 }
 
@@ -104,7 +118,14 @@ func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
 		return nil, ErrInvalidEventRequest
 	}
 
-	if req.Title == "" || req.Description == "" || req.Category == "" || req.Location == "" || req.StartDate.IsZero() || req.DurationMinutes <= 0 || req.Capacity <= 0 {
+	if req.Category == "" {
+		return nil, ErrInvalidEventRequest
+	}
+	if !IsAllowedEventCategory(req.Category) {
+		return nil, ErrInvalidEventCategory
+	}
+
+	if req.Title == "" || req.Description == "" || req.Location == "" || req.StartDate.IsZero() || req.DurationMinutes <= 0 || req.Capacity <= 0 {
 		return nil, ErrInvalidEventRequest
 	}
 
@@ -160,6 +181,12 @@ func UpdateEvent(db *gorm.DB, id uint, req UpdateEventRequest) (*EventResponse, 
 		}
 		if req.Category != nil {
 			event.Category = strings.TrimSpace(*req.Category)
+			if event.Category == "" {
+				return ErrInvalidEventRequest
+			}
+			if !IsAllowedEventCategory(event.Category) {
+				return ErrInvalidEventCategory
+			}
 		}
 		if req.Location != nil {
 			event.Location = strings.TrimSpace(*req.Location)
@@ -236,9 +263,14 @@ func DisableEvent(db *gorm.DB, id uint) error {
 }
 
 func buildEventResponse(db *gorm.DB, event domain.Event) (EventResponse, error) {
-	availableCapacity, err := calculateAvailableCapacity(db, event)
+	ticketsSold, err := dao.CountActiveTicketsByEventID(db, event.ID)
 	if err != nil {
 		return EventResponse{}, err
+	}
+
+	availableCapacity := event.Capacity - int(ticketsSold)
+	if availableCapacity < 0 {
+		availableCapacity = 0
 	}
 
 	return EventResponse{
@@ -253,22 +285,7 @@ func buildEventResponse(db *gorm.DB, event domain.Event) (EventResponse, error) 
 		Capacity:          event.Capacity,
 		Price:             event.Price,
 		AvailableCapacity: availableCapacity,
+		TicketsSold:       int(ticketsSold),
 		Active:            event.Active,
 	}, nil
-}
-
-func calculateAvailableCapacity(db *gorm.DB, event domain.Event) (int, error) {
-	var activeTickets int64
-	if err := db.Model(&domain.Ticket{}).
-		Where("event_id = ? AND status = ?", event.ID, "ACTIVE").
-		Count(&activeTickets).Error; err != nil {
-		return 0, err
-	}
-
-	availableCapacity := event.Capacity - int(activeTickets)
-	if availableCapacity < 0 {
-		return 0, nil
-	}
-
-	return availableCapacity, nil
 }

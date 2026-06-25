@@ -3,10 +3,11 @@ import AlertMessage from '../components/AlertMessage.jsx'
 import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import EventCard from '../components/EventCard.jsx'
+import { eventCategoryFilters } from '../constants/eventCategories.js'
 import { getEvents } from '../services/api.js'
 import { formatEventDate, formatEventTime, getEventImage } from '../utils/events.js'
 
-const categories = ['Todos', 'Música', 'Comedia', 'Tecnología', 'Teatro']
+const categories = eventCategoryFilters
 
 export default function Home({ searchQuery = '' }) {
   const [category, setCategory] = useState('Todos')

@@ -33,7 +33,7 @@ func SeedEvents(db *gorm.DB) error {
 		{
 			Title:           "Stand Up Night",
 			Description:     "Noche de comedia con shows de stand up.",
-			Category:        "Comedia",
+			Category:        "Otros",
 			Location:        "Villa Allende",
 			StartDate:       time.Date(2026, time.October, 3, 20, 30, 0, 0, time.Local),
 			DurationMinutes: 90,

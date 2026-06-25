@@ -189,7 +189,7 @@ export default function Checkout({ cartItem, setCartItem }) {
                         <span className="font-black">General</span>
                         <span className="font-black text-violet-200">Entrada</span>
                       </div>
-                      <p className="mt-2 text-sm text-gray-400">Precio unitario: {formatPrice(event.price)}. El backend emite una entrada general por compra.</p>
+                      <p className="mt-2 text-sm text-gray-400">Precio unitario: {formatPrice(event.price)}. Entrada general para este evento.</p>
                     </div>
                   </div>
                 </>

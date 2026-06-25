@@ -67,14 +67,14 @@ export default function AdminReportDetail() {
       <AdminStatCard label="Tickets totales" value={event.total_tickets} />
       <AdminStatCard label="Cupo disponible" value={event.available_capacity} helper={`Capacidad total ${event.capacity}`} />
       <AdminStatCard label="Ocupación" value={formatPercent(occupancy)} />
-      <AdminStatCard label="Ingresos estimados" value={money.format(event.estimated_revenue)} helper="Calculados por el backend" />
+      <AdminStatCard label="Ingresos estimados" value={money.format(event.estimated_revenue)} helper="Entradas activas por precio actual" />
       <AdminStatCard label="Precio entrada" value={money.format(event.price)} />
     </div>
 
     <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
       <section className="rounded-3xl border border-ticket-border bg-ticket-card p-5">
         <h2 className="text-xl font-black">Ventas y compradores</h2>
-        <div className="mt-6 rounded-2xl border border-dashed border-ticket-border p-10 text-center text-gray-400">El backend actual todavía no expone compradores ni ventas por semana.</div>
+        <div className="mt-6 rounded-2xl border border-dashed border-ticket-border p-10 text-center text-gray-400">El detalle de compradores y ventas por semana no está disponible.</div>
       </section>
       <section className="rounded-3xl border border-ticket-border bg-ticket-card p-5">
         <h2 className="text-xl font-black">Ocupación</h2>
