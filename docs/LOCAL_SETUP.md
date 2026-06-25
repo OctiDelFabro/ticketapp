@@ -100,6 +100,27 @@ Abrí la app en:
 http://localhost:5173
 ```
 
+
+## Alternativa con Docker
+
+También podés levantar todo el proyecto con Docker Compose, sin instalar MySQL localmente:
+
+```bash
+docker compose up --build
+```
+
+Para detener los contenedores:
+
+```bash
+docker compose down
+```
+
+Para detenerlos y borrar el volumen local de MySQL, reseteando la base de datos del contenedor:
+
+```bash
+docker compose down -v
+```
+
 ## Troubleshooting
 
 - Si no aparecen eventos, probá abrir `http://localhost:8080/api/events` y verificá que el backend esté respondiendo.
