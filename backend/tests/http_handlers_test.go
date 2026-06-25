@@ -34,14 +34,6 @@ func performJSONRequest(t *testing.T, handler http.Handler, method string, path 
 	return response
 }
 
-func decodeJSONResponse(t *testing.T, response *httptest.ResponseRecorder) map[string]any {
-	t.Helper()
-
-	var body map[string]any
-	mustNoError(t, json.Unmarshal(response.Body.Bytes(), &body))
-	return body
-}
-
 func TestHealthEndpointReturnsOK(t *testing.T) {
 	db := newTestDB(t)
 	router := newTestRouter(t, db)
