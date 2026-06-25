@@ -4,18 +4,20 @@ import AlertMessage from '../components/AlertMessage.jsx'
 import Button from '../components/Button.jsx'
 import CheckoutProgress from '../components/CheckoutProgress.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
-import { purchaseTicket } from '../services/api.js'
+import { giftTicket, purchaseTicket } from '../services/api.js'
 import { getStoredUser, isAuthenticated } from '../utils/auth.js'
 import { formatPrice } from '../utils/formatters.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phonePattern = /^\+?[\d\s]{8,20}$/
 
-const friendlyPurchaseError = (message) => {
-  if (!message) return 'No se pudo completar la compra.'
-  if (message.length > 120) return 'No se pudo completar la compra.'
-  return `No se pudo completar la compra. ${message}`
+const friendlyPurchaseError = (message, isGift = false) => {
+  const defaultMessage = isGift ? 'No se pudo completar el regalo.' : 'No se pudo completar la compra.'
+  if (!message) return defaultMessage
+  if (message.length > 120) return defaultMessage
+  return `${defaultMessage} ${message}`
 }
+
 
 export default function Checkout({ cartItem, setCartItem }) {
   const [step, setStep] = useState(1)
@@ -23,6 +25,7 @@ export default function Checkout({ cartItem, setCartItem }) {
   const storedUser = getStoredUser()
   const [customer, setCustomer] = useState({ firstName: '', lastName: '', email: storedUser?.email ?? '', phone: '', dni: '' })
   const [card, setCard] = useState({ number: '', expiry: '', cvv: '', holder: '' })
+  const [gift, setGift] = useState({ targetEmail: '', message: '' })
   const [errors, setErrors] = useState({})
   const [purchaseError, setPurchaseError] = useState('')
   const [purchasing, setPurchasing] = useState(false)
@@ -31,13 +34,29 @@ export default function Checkout({ cartItem, setCartItem }) {
   const navigate = useNavigate()
 
   const event = cartItem?.event
-  const quantity = cartItem?.quantity ?? 1
+  const isGift = cartItem?.mode === 'gift'
+  const quantity = isGift ? 1 : (cartItem?.quantity ?? 1)
   const eventPath = event ? `/evento/${event.id}` : '/'
 
   const updateCustomer = (field, value) => {
     setCustomer((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
     setPurchaseError('')
+  }
+
+
+  const updateGift = (field, value) => {
+    setGift((current) => ({ ...current, [field]: value }))
+    setErrors((current) => ({ ...current, [field]: '' }))
+    setPurchaseError('')
+  }
+
+  const validateGift = () => {
+    const nextErrors = {}
+    if (!gift.targetEmail.trim() || !emailPattern.test(gift.targetEmail)) nextErrors.targetEmail = 'Ingresá un email destino válido.'
+    if (gift.message.trim().length > 250) nextErrors.message = 'El mensaje puede tener hasta 250 caracteres.'
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
   }
 
   const updateCard = (field, value) => {
@@ -76,14 +95,14 @@ export default function Checkout({ cartItem, setCartItem }) {
     setPurchasing(true)
     setPurchaseError('')
     try {
-      const purchase = await purchaseTicket(event.id, quantity)
+      const purchase = isGift ? await giftTicket(event.id, gift.targetEmail.trim(), gift.message.trim()) : await purchaseTicket(event.id, quantity)
       const tickets = Array.isArray(purchase?.tickets) ? purchase.tickets : [purchase]
       setConfirmedTickets(tickets)
       setConfirmedEvent(event)
       setCartItem(null)
       setStep(4)
     } catch (err) {
-      setPurchaseError(friendlyPurchaseError(err.message))
+      setPurchaseError(friendlyPurchaseError(err.message, isGift))
     } finally {
       setPurchasing(false)
     }
@@ -92,7 +111,7 @@ export default function Checkout({ cartItem, setCartItem }) {
   const next = () => {
     if (purchasing) return
     if (!event) return
-    if (step === 2 && !validateCustomer()) return
+    if (step === 2 && !(isGift ? validateGift() : validateCustomer())) return
     if (step === 3) {
       if (!validatePayment()) return
       confirmPurchase()
@@ -125,7 +144,7 @@ export default function Checkout({ cartItem, setCartItem }) {
           <button onClick={goBack} className="w-fit font-bold text-gray-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={purchasing} type="button">
             {step === 1 ? '← Volver al evento' : '← Volver'}
           </button>
-          <h1 className="text-xl font-black">{event ? `${event.title} - TicketApp Checkout` : 'TicketApp Checkout'}</h1>
+          <h1 className="text-xl font-black">{event ? `${event.title} - ${isGift ? 'Regalar entrada' : 'TicketApp Checkout'}` : 'TicketApp Checkout'}</h1>
         </div>
         <CheckoutProgress currentStep={step} />
         {!event && step < 4 ? (
@@ -171,6 +190,17 @@ export default function Checkout({ cartItem, setCartItem }) {
                 </>
               )}
               {step === 2 && (
+                isGift ? (
+                  <div className="glass-card rounded-3xl p-6">
+                    <h2 className="text-2xl font-black">Regalar entrada</h2>
+                    <p className="mt-2 text-sm text-gray-400">El destinatario debe estar registrado en TicketApp. No enviaremos emails reales.</p>
+                    <form className="mt-5 grid gap-4">
+                      <Field error={errors.targetEmail}><input className={`input-dark ${errors.targetEmail ? 'border-red-500' : ''}`} onChange={(event) => updateGift('targetEmail', event.target.value)} type="email" placeholder="Email del destinatario" value={gift.targetEmail} /></Field>
+                      <Field error={errors.message}><textarea className={`input-dark min-h-28 ${errors.message ? 'border-red-500' : ''}`} maxLength="250" onChange={(event) => updateGift('message', event.target.value)} placeholder="Mensaje opcional (máximo 250 caracteres)" value={gift.message} /></Field>
+                      <p className="text-right text-xs text-gray-500">{gift.message.trim().length}/250</p>
+                    </form>
+                  </div>
+                ) : (
                 <div className="glass-card rounded-3xl p-6">
                   <h2 className="text-2xl font-black">Tus datos</h2>
                   <form className="mt-5 grid gap-4">
@@ -183,8 +213,9 @@ export default function Checkout({ cartItem, setCartItem }) {
                     <Field error={errors.dni}><input className={`input-dark ${errors.dni ? 'border-red-500' : ''}`} inputMode="numeric" onChange={(event) => updateCustomer('dni', event.target.value.replace(/\D/g, ''))} placeholder="DNI" value={customer.dni} /></Field>
                   </form>
                 </div>
+                )
               )}
-              {step === 3 && (
+                            {step === 3 && (
                 <div className="glass-card rounded-3xl p-6">
                   <h2 className="text-2xl font-black">Pago</h2>
                   <div className="mt-5 flex flex-wrap gap-3">
@@ -216,7 +247,8 @@ export default function Checkout({ cartItem, setCartItem }) {
             <OrderSummary
               event={event}
               quantity={quantity}
-              buttonText={step === 3 ? (purchasing ? 'Confirmando...' : 'Finalizar compra') : 'Continuar'}
+              buttonText={step === 3 ? (purchasing ? 'Confirmando...' : (isGift ? 'Finalizar regalo' : 'Finalizar compra')) : 'Continuar'}
+              mode={cartItem?.mode}
               onNext={next}
               onRemove={removeCartItem}
               disabled={purchasing}
@@ -225,8 +257,8 @@ export default function Checkout({ cartItem, setCartItem }) {
         ) : (
           <section className="mx-auto mt-10 max-w-2xl text-center">
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-ticket-purple text-5xl font-black shadow-glow">✓</div>
-            <h2 className="mt-6 text-4xl font-black">Su compra fue exitosa.</h2>
-            <p className="mt-3 text-gray-400">{quantity === 1 ? 'Tu entrada ya está asociada a tu cuenta.' : 'Tus entradas ya están asociadas a tu cuenta.'}</p>
+            <h2 className="mt-6 text-4xl font-black">{isGift ? 'Entrada regalada con éxito.' : 'Su compra fue exitosa.'}</h2>
+            <p className="mt-3 text-gray-400">{isGift ? `La entrada quedó asociada a la cuenta de ${gift.targetEmail.trim()}.` : (quantity === 1 ? 'Tu entrada ya está asociada a tu cuenta.' : 'Tus entradas ya están asociadas a tu cuenta.')}</p>
             <div className="glass-card mt-8 rounded-3xl p-6 text-left">
               <div className="mt-6 grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
                 <p>Evento: <b className="text-white">{confirmedTickets[0]?.event_title ?? confirmedEvent?.title}</b></p>

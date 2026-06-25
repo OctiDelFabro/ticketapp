@@ -1,9 +1,11 @@
 import Button from './Button.jsx'
 import { formatPrice, normalizePrice } from '../utils/formatters.js'
 
-export default function OrderSummary({ event, quantity = 1, buttonText, onNext, onRemove, disabled = false }) {
+export default function OrderSummary({ event, quantity = 1, mode = 'purchase', buttonText, onNext, onRemove, disabled = false }) {
   const eventPrice = normalizePrice(event?.price)
-  const total = eventPrice * quantity
+  const isGift = mode === 'gift'
+  const displayQuantity = isGift ? 1 : quantity
+  const total = eventPrice * displayQuantity
   const eventPath = event ? `/evento/${event.id}` : '/'
 
   if (!event) {
@@ -34,9 +36,10 @@ export default function OrderSummary({ event, quantity = 1, buttonText, onNext, 
       </div>
       <div className="my-5 space-y-3 border-y border-ticket-border py-5 text-sm">
         <div className="flex justify-between text-gray-300">
-          <span>Entrada general x {quantity}</span>
+          <span>{isGift ? 'Regalo para otro usuario' : `Entrada general x ${displayQuantity}`}</span>
           <span>{formatPrice(eventPrice)}</span>
         </div>
+        {isGift && <div className="flex justify-between text-gray-300"><span>Cantidad</span><span>1</span></div>}
       </div>
       <div className="mb-5 flex justify-between text-xl font-black">
         <span>Total</span>

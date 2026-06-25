@@ -549,3 +549,53 @@ Devuelve el reporte detallado de un evento específico, activo o inactivo.
 - `403 Forbidden`: usuario autenticado sin rol `ADMIN`.
 - `404 Not Found`: evento inexistente.
 - `500 Internal Server Error`: error interno.
+
+## POST /api/tickets/gift
+
+Crea una entrada nueva como regalo para otro usuario registrado. A diferencia de transferir una entrada, regalar no mueve una entrada existente: compra/emite una entrada nueva directamente a nombre del destinatario.
+
+- **Auth:** requerida (`Authorization: Bearer <token>`).
+- **Body:**
+
+```json
+{
+  "event_id": 1,
+  "target_email": "lorenzo@test.com",
+  "message": "Feliz cumple!"
+}
+```
+
+- `event_id` es obligatorio.
+- `target_email` es obligatorio y debe pertenecer a un usuario registrado.
+- `message` es opcional, se recorta en backend y acepta hasta 250 caracteres.
+
+### Response 201
+
+```json
+{
+  "id": 10,
+  "event_id": 1,
+  "event_title": "Nombre del evento",
+  "image_url": "https://...",
+  "event_start_date": "2026-06-25T20:00:00Z",
+  "event_location": "Buenos Aires",
+  "event_price": 15000,
+  "status": "ACTIVE",
+  "purchase_date": "2026-06-25T12:00:00Z",
+  "user_id": 2,
+  "user_email": "lorenzo@test.com",
+  "is_gift": true,
+  "gifted_by_id": 1,
+  "gifted_by_email": "octavio@test.com",
+  "gift_message": "Feliz cumple!",
+  "gifted_at": "2026-06-25T12:00:00Z"
+}
+```
+
+### Errores
+
+- `400`: body inválido, `event_id`/`target_email` vacío, mensaje demasiado largo o intento de regalarse a sí mismo.
+- `401`: falta token o token inválido.
+- `404`: evento o usuario destino inexistente.
+- `409`: no hay capacidad disponible o el destinatario ya tiene una entrada `ACTIVE` para ese evento.
+- `500`: error interno.
