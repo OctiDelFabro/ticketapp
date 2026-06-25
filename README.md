@@ -115,3 +115,17 @@ Remove-Item .\coverage.out -Force -ErrorAction SilentlyContinue
 ```
 
 Los tests de backend usan SQLite en memoria con un driver pure-Go, por lo que no dependen de una instancia MySQL real ni requieren CGO/gcc.
+## Backend tests and coverage
+
+The backend test suite uses SQLite in-memory databases through GORM test helpers, so it does not require MySQL or Docker. Coverage artifacts such as `coverage.out` are generated locally and should not be committed.
+
+Run the backend tests from the repository root with:
+
+```bash
+cd backend
+go test ./...
+go test ./... -cover
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+go tool cover -html=coverage.out
+```

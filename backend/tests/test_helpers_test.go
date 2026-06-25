@@ -42,7 +42,7 @@ func createTestEvent(t *testing.T, db *gorm.DB, attrs ...func(*domain.Event)) do
 		Title:           fmt.Sprintf("Test Event %d", time.Now().UnixNano()),
 		Description:     "A test event description",
 		ImageURL:        "https://example.com/event.jpg",
-		Category:        "Music",
+		Category:        "Música",
 		Location:        "Buenos Aires",
 		StartDate:       time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second),
 		DurationMinutes: 120,
