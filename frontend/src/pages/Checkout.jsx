@@ -31,12 +31,15 @@ export default function Checkout({ cartItem, setCartItem }) {
   const [purchasing, setPurchasing] = useState(false)
   const [confirmedTickets, setConfirmedTickets] = useState([])
   const [confirmedEvent, setConfirmedEvent] = useState(null)
+  const [confirmedMode, setConfirmedMode] = useState(null)
+  const [confirmedGiftEmail, setConfirmedGiftEmail] = useState('')
   const navigate = useNavigate()
 
   const event = cartItem?.event
   const isGift = cartItem?.mode === 'gift'
   const quantity = isGift ? 1 : (cartItem?.quantity ?? 1)
   const eventPath = event ? `/evento/${event.id}` : '/'
+  const isConfirmedGift = confirmedMode === 'gift'
 
   const updateCustomer = (field, value) => {
     setCustomer((current) => ({ ...current, [field]: value }))
@@ -99,6 +102,8 @@ export default function Checkout({ cartItem, setCartItem }) {
       const tickets = Array.isArray(purchase?.tickets) ? purchase.tickets : [purchase]
       setConfirmedTickets(tickets)
       setConfirmedEvent(event)
+      setConfirmedMode(isGift ? 'gift' : 'purchase')
+      setConfirmedGiftEmail(gift.targetEmail.trim())
       setCartItem(null)
       setStep(4)
     } catch (err) {
@@ -257,8 +262,8 @@ export default function Checkout({ cartItem, setCartItem }) {
         ) : (
           <section className="mx-auto mt-10 max-w-2xl text-center">
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-ticket-purple text-5xl font-black shadow-glow">✓</div>
-            <h2 className="mt-6 text-4xl font-black">{isGift ? 'Entrada regalada con éxito.' : 'Su compra fue exitosa.'}</h2>
-            <p className="mt-3 text-gray-400">{isGift ? `La entrada quedó asociada a la cuenta de ${gift.targetEmail.trim()}.` : (quantity === 1 ? 'Tu entrada ya está asociada a tu cuenta.' : 'Tus entradas ya están asociadas a tu cuenta.')}</p>
+            <h2 className="mt-6 text-4xl font-black">{isConfirmedGift ? 'Entrada regalada con éxito.' : 'Su compra fue exitosa.'}</h2>
+            <p className="mt-3 text-gray-400">{isConfirmedGift ? `La entrada quedó asociada a la cuenta de ${confirmedGiftEmail}.` : (quantity === 1 ? 'Tu entrada ya está asociada a tu cuenta.' : 'Tus entradas ya están asociadas a tu cuenta.')}</p>
             <div className="glass-card mt-8 rounded-3xl p-6 text-left">
               <div className="mt-6 grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
                 <p>Evento: <b className="text-white">{confirmedTickets[0]?.event_title ?? confirmedEvent?.title}</b></p>
@@ -270,8 +275,8 @@ export default function Checkout({ cartItem, setCartItem }) {
               </div>
             </div>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
-              <Button onClick={() => navigate('/mis-entradas')}>Ir a Mis Entradas</Button>
-              <Button onClick={() => navigate('/')} variant="secondary">Volver al inicio</Button>
+              {!isConfirmedGift && <Button onClick={() => navigate('/mis-entradas')}>Ir a Mis Entradas</Button>}
+              <Button onClick={() => navigate('/')} variant={isConfirmedGift ? 'primary' : 'secondary'}>Volver al inicio</Button>
             </div>
           </section>
         )}
