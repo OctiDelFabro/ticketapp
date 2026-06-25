@@ -59,6 +59,7 @@ export const login = (payload) => request('/auth/login', { method: 'POST', body:
 export const getEvents = (params) => request('/events', { params })
 export const getEventById = (id) => request(`/events/${id}`)
 export const purchaseTicket = (eventId, quantity = 1) => request('/tickets/purchase', { method: 'POST', body: { event_id: eventId, quantity }, auth: true })
+export const giftTicket = (eventId, targetEmail, message = '') => request('/tickets/gift', { method: 'POST', body: { event_id: eventId, target_email: targetEmail, message }, auth: true })
 export const getMyTickets = () => request('/tickets/me', { auth: true })
 export const cancelTicket = (ticketId) => request(`/tickets/${ticketId}/cancel`, { method: 'PATCH', auth: true })
 export const transferTicket = (ticketId, targetEmail) => request(`/tickets/${ticketId}/transfer`, { method: 'PATCH', body: { target_email: targetEmail }, auth: true })

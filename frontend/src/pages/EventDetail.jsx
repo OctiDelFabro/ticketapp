@@ -52,7 +52,17 @@ export default function EventDetail({ onAddToCart }) {
       return
     }
 
-    onAddToCart({ eventId: event.id, event: normalizeCartEvent(event), quantity: selectedQuantity })
+    onAddToCart({ eventId: event.id, event: normalizeCartEvent(event), quantity: selectedQuantity, mode: 'purchase' })
+    navigate('/checkout')
+  }
+
+  const gift = () => {
+    if (!isAuthenticated()) {
+      navigate('/login', { state: { message: 'Necesitás iniciar sesión para regalar una entrada.' } })
+      return
+    }
+
+    onAddToCart({ eventId: event.id, event: normalizeCartEvent(event), quantity: 1, mode: 'gift' })
     navigate('/checkout')
   }
 
@@ -114,7 +124,7 @@ export default function EventDetail({ onAddToCart }) {
               <div className="flex justify-between text-xl font-black"><span>Total</span><span>{formatPrice((Number(event.price) || 0) * selectedQuantity)}</span></div>
               <div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div>
             </div>
-            <Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
+            <div className="grid gap-3"><Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><Button onClick={gift} className="w-full" variant="secondary" disabled={event.available_capacity <= 0}>Regalar entrada</Button></div><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
           </aside>
         </div>
       </main>

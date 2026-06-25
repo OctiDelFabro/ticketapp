@@ -40,6 +40,28 @@ func (controller *TicketController) Purchase(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+func (controller *TicketController) Gift(c *gin.Context) {
+	userID, ok := getAuthenticatedUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authenticated user not found"})
+		return
+	}
+
+	var req services.GiftTicketRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	response, err := services.GiftTicket(controller.db, userID, req)
+	if err != nil {
+		handleTicketError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
 func (controller *TicketController) GetMyTickets(c *gin.Context) {
 	userID, ok := getAuthenticatedUserID(c)
 	if !ok {
@@ -130,7 +152,7 @@ func parseTicketID(c *gin.Context) (uint, error) {
 
 func handleTicketError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, services.ErrInvalidRequest), errors.Is(err, services.ErrInvalidTicketQuantity):
+	case errors.Is(err, services.ErrInvalidRequest), errors.Is(err, services.ErrInvalidTicketQuantity), errors.Is(err, services.ErrGiftMessageTooLong), errors.Is(err, services.ErrGiftToSelf):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, services.ErrTicketForbidden):
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})

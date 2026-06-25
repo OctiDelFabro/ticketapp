@@ -39,7 +39,7 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
       <div className={`flex flex-col border-l-4 ${isActive ? 'border-ticket-purple' : 'border-gray-600'} sm:flex-row`}>
         <img src={imageSrc} alt={ticket.event_title || 'Imagen del evento'} className="h-48 w-full object-cover sm:h-auto sm:w-44" />
         <div className="flex-1 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-2xl font-black">{ticket.event_title}</h3><p className="mt-2 text-violet-200">{formatEventDate(ticket.event_start_date)} · {formatEventTime(ticket.event_start_date)}</p><p className="text-gray-400">{ticket.event_location}</p></div><Badge tone={isActive ? 'purple' : 'red'}>{ticket.status}</Badge></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-2xl font-black">{ticket.event_title}</h3>{ticket.is_gift && <Badge tone="purple">Regalada</Badge>}</div><p className="mt-2 text-violet-200">{formatEventDate(ticket.event_start_date)} · {formatEventTime(ticket.event_start_date)}</p><p className="text-gray-400">{ticket.event_location}</p></div><Badge tone={isActive ? 'purple' : 'red'}>{ticket.status}</Badge></div>
           <div className="mt-5 grid gap-2 text-sm text-gray-400 sm:grid-cols-2">
             <p>ID ticket: <span className="font-bold text-white">{ticket.id}</span></p>
             <p>ID evento: <span className="font-bold text-white">{ticket.event_id}</span></p>
@@ -48,6 +48,12 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
             <p>Tipo: <span className="font-bold text-white">General</span></p>
             <p>Precio: <span className="font-bold text-white">{ticketPrice === undefined || ticketPrice === null ? 'Precio no disponible' : formatPrice(ticketPrice)}</span></p>
           </div>
+          {ticket.is_gift && (
+            <div className="mt-5 rounded-2xl border border-ticket-purple2/40 bg-ticket-purple/10 p-4 text-sm text-gray-300">
+              <p><span className="font-bold text-white">Regalada por:</span> {ticket.gifted_by_email || 'Usuario de TicketApp'}</p>
+              {ticket.gift_message && <p className="mt-2"><span className="font-bold text-white">Mensaje:</span> {ticket.gift_message}</p>}
+            </div>
+          )}
           {isActive && <div className="mt-5 flex flex-wrap gap-3"><Button onClick={() => onCancel(ticket.id)} variant="danger" type="button" disabled={disabled}>{cancelling ? 'Cancelando entrada...' : '× Cancelar'}</Button><Button onClick={toggleTransfer} variant="secondary" type="button" disabled={disabled}>{transferring ? 'Transfiriendo entrada...' : 'Transferir'}</Button></div>}
           {isActive && showTransfer && (
             <div className="mt-4 space-y-3">

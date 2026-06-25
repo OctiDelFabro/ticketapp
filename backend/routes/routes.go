@@ -23,6 +23,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 	tickets := router.Group("/api/tickets")
 	tickets.Use(middlewares.AuthMiddleware())
 	tickets.POST("/purchase", ticketController.Purchase)
+	tickets.POST("/gift", ticketController.Gift)
 	tickets.GET("/me", ticketController.GetMyTickets)
 	tickets.PATCH("/:id/cancel", ticketController.Cancel)
 	tickets.PATCH("/:id/transfer", ticketController.Transfer)

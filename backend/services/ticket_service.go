@@ -24,6 +24,8 @@ var (
 	ErrTicketNotActive          = errors.New("ticket is not active")
 	ErrTargetUserNotFound       = errors.New("target user not found")
 	ErrTransferToSameUser       = errors.New("target user must be different from authenticated user")
+	ErrGiftToSelf               = errors.New("target user must be different from authenticated user")
+	ErrGiftMessageTooLong       = errors.New("gift message must be 250 characters or fewer")
 	ErrTargetUserAlreadyHasSeat = errors.New("target user already has an active ticket for this event")
 )
 
@@ -41,18 +43,29 @@ type TransferTicketRequest struct {
 	TargetEmail string `json:"target_email"`
 }
 
+type GiftTicketRequest struct {
+	EventID     uint   `json:"event_id"`
+	TargetEmail string `json:"target_email"`
+	GiftMessage string `json:"message"`
+}
+
 type TicketResponse struct {
-	ID             uint      `json:"id"`
-	EventID        uint      `json:"event_id"`
-	EventTitle     string    `json:"event_title"`
-	EventImageURL  string    `json:"image_url"`
-	EventStartDate time.Time `json:"event_start_date"`
-	EventLocation  string    `json:"event_location"`
-	EventPrice     float64   `json:"event_price"`
-	Status         string    `json:"status"`
-	PurchaseDate   time.Time `json:"purchase_date"`
-	UserID         uint      `json:"user_id"`
-	UserEmail      string    `json:"user_email"`
+	ID             uint       `json:"id"`
+	EventID        uint       `json:"event_id"`
+	EventTitle     string     `json:"event_title"`
+	EventImageURL  string     `json:"image_url"`
+	EventStartDate time.Time  `json:"event_start_date"`
+	EventLocation  string     `json:"event_location"`
+	EventPrice     float64    `json:"event_price"`
+	Status         string     `json:"status"`
+	PurchaseDate   time.Time  `json:"purchase_date"`
+	UserID         uint       `json:"user_id"`
+	UserEmail      string     `json:"user_email"`
+	IsGift         bool       `json:"is_gift"`
+	GiftedByID     *uint      `json:"gifted_by_id,omitempty"`
+	GiftedByEmail  string     `json:"gifted_by_email"`
+	GiftMessage    string     `json:"gift_message"`
+	GiftedAt       *time.Time `json:"gifted_at,omitempty"`
 }
 
 func PurchaseTicket(db *gorm.DB, userID uint, req PurchaseTicketRequest) (*TicketResponse, error) {
@@ -125,6 +138,77 @@ func PurchaseTickets(db *gorm.DB, userID uint, req PurchaseTicketRequest) (*Purc
 	}
 
 	return &PurchaseTicketsResponse{Tickets: createdTickets, Quantity: quantity}, nil
+}
+
+func GiftTicket(db *gorm.DB, giverUserID uint, req GiftTicketRequest) (*TicketResponse, error) {
+	req.TargetEmail = strings.TrimSpace(req.TargetEmail)
+	req.GiftMessage = strings.TrimSpace(req.GiftMessage)
+	if req.EventID == 0 || req.TargetEmail == "" {
+		return nil, ErrInvalidRequest
+	}
+	if len(req.GiftMessage) > 250 {
+		return nil, ErrGiftMessageTooLong
+	}
+
+	var response TicketResponse
+	err := db.Transaction(func(tx *gorm.DB) error {
+		targetUser, err := dao.FindUserByEmail(tx, req.TargetEmail)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTargetUserNotFound
+			}
+			return err
+		}
+		if targetUser.ID == giverUserID {
+			return ErrGiftToSelf
+		}
+
+		event, err := dao.FindEventByID(tx, req.EventID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEventNotFound
+			}
+			return err
+		}
+
+		activeTickets, err := dao.CountActiveTicketsByEventID(tx, req.EventID)
+		if err != nil {
+			return err
+		}
+		if event.Capacity-int(activeTickets) < 1 {
+			return ErrNoTicketCapacity
+		}
+
+		if _, err := dao.FindActiveTicketByUserAndEvent(tx, targetUser.ID, req.EventID); err == nil {
+			return ErrTargetUserAlreadyHasSeat
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		now := time.Now()
+		ticket := domain.Ticket{
+			UserID:       targetUser.ID,
+			EventID:      req.EventID,
+			Status:       ticketStatusActive,
+			PurchaseDate: now,
+			GiftedByID:   &giverUserID,
+			GiftMessage:  req.GiftMessage,
+			GiftedAt:     &now,
+		}
+		if err := dao.CreateTicket(tx, &ticket); err != nil {
+			return err
+		}
+		createdTicket, err := dao.FindTicketByID(tx, ticket.ID)
+		if err != nil {
+			return err
+		}
+		response = buildTicketResponse(*createdTicket)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 func GetMyTickets(db *gorm.DB, userID uint) ([]TicketResponse, error) {
@@ -232,5 +316,17 @@ func buildTicketResponse(ticket domain.Ticket) TicketResponse {
 		PurchaseDate:   ticket.PurchaseDate,
 		UserID:         ticket.UserID,
 		UserEmail:      ticket.User.Email,
+		IsGift:         ticket.GiftedByID != nil,
+		GiftedByID:     ticket.GiftedByID,
+		GiftedByEmail:  giftedByEmail(ticket),
+		GiftMessage:    ticket.GiftMessage,
+		GiftedAt:       ticket.GiftedAt,
 	}
+}
+
+func giftedByEmail(ticket domain.Ticket) string {
+	if ticket.GiftedBy == nil {
+		return ""
+	}
+	return ticket.GiftedBy.Email
 }
