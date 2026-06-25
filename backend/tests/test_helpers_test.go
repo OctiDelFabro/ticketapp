@@ -1,9 +1,11 @@
 package tests
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -42,7 +44,7 @@ func createTestEvent(t *testing.T, db *gorm.DB, attrs ...func(*domain.Event)) do
 		Title:           fmt.Sprintf("Test Event %d", time.Now().UnixNano()),
 		Description:     "A test event description",
 		ImageURL:        "https://example.com/event.jpg",
-		Category:        "Music",
+		Category:        "Música",
 		Location:        "Buenos Aires",
 		StartDate:       time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second),
 		DurationMinutes: 120,
@@ -119,6 +121,15 @@ func authHeader(t *testing.T, user domain.User) http.Header {
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+generateTestToken(t, user))
 	return header
+}
+
+func decodeJSONResponse(t *testing.T, recorder *httptest.ResponseRecorder) map[string]any {
+	t.Helper()
+
+	var payload map[string]any
+	err := json.Unmarshal(recorder.Body.Bytes(), &payload)
+	mustNoError(t, err)
+	return payload
 }
 
 func mustNoError(t *testing.T, err error) {

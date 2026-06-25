@@ -137,3 +137,95 @@ func TestAvailableCapacityCountsOnlyActiveTickets(t *testing.T) {
 	mustNotNil(t, response)
 	mustEqual(t, 1, response.AvailableCapacity)
 }
+
+func validCreateEventRequest() services.CreateEventRequest {
+	return services.CreateEventRequest{
+		Title:           "Nuevo evento",
+		Description:     "Descripción del evento",
+		ImageURL:        "https://example.com/nuevo.jpg",
+		Category:        "Música",
+		Location:        "Buenos Aires",
+		StartDate:       time.Now().Add(72 * time.Hour).UTC().Truncate(time.Second),
+		DurationMinutes: 90,
+		Capacity:        50,
+		Price:           25.5,
+	}
+}
+
+func TestCreateEventCreatesValidEvent(t *testing.T) {
+	db := newTestDB(t)
+	req := validCreateEventRequest()
+
+	response, err := services.CreateEvent(db, req)
+
+	mustNoError(t, err)
+	mustNotNil(t, response)
+	mustEqual(t, "Nuevo evento", response.Title)
+	mustEqual(t, "Música", response.Category)
+	mustEqual(t, 50, response.Capacity)
+	mustEqual(t, 50, response.AvailableCapacity)
+	mustEqual(t, 0, response.TicketsSold)
+	mustTrue(t, response.Active)
+}
+
+func TestCreateEventCategoryValidation(t *testing.T) {
+	db := newTestDB(t)
+	req := validCreateEventRequest()
+	req.Category = "   "
+	_, err := services.CreateEvent(db, req)
+	mustErrorIs(t, err, services.ErrInvalidEventRequest)
+
+	req = validCreateEventRequest()
+	req.Category = "Music"
+	_, err = services.CreateEvent(db, req)
+	mustErrorIs(t, err, services.ErrInvalidEventCategory)
+
+	for _, category := range []string{"Música", "Teatro", "Deportes", "Tecnología", "Otros"} {
+		t.Run(category, func(t *testing.T) {
+			req := validCreateEventRequest()
+			req.Title = "Evento " + category
+			req.Category = category
+			response, err := services.CreateEvent(db, req)
+			mustNoError(t, err)
+			mustEqual(t, category, response.Category)
+		})
+	}
+}
+
+func TestUpdateEventCategoryAndCapacityValidation(t *testing.T) {
+	db := newTestDB(t)
+	userOne := createTestUser(t, db, func(user *domain.User) { user.Email = "event-user-one@example.com" })
+	userTwo := createTestUser(t, db, func(user *domain.User) { user.Email = "event-user-two@example.com" })
+	event := createTestEvent(t, db, func(event *domain.Event) { event.Capacity = 3 })
+	createTestTicket(t, db, userOne.ID, event.ID, "ACTIVE")
+	createTestTicket(t, db, userTwo.ID, event.ID, "ACTIVE")
+	createTestTicket(t, db, userTwo.ID, event.ID, "CANCELLED")
+
+	validCategory := "Teatro"
+	response, err := services.UpdateEvent(db, event.ID, services.UpdateEventRequest{Category: &validCategory})
+	mustNoError(t, err)
+	mustEqual(t, "Teatro", response.Category)
+
+	invalidCategory := "Cine"
+	_, err = services.UpdateEvent(db, event.ID, services.UpdateEventRequest{Category: &invalidCategory})
+	mustErrorIs(t, err, services.ErrInvalidEventCategory)
+
+	capacityTooLow := 1
+	_, err = services.UpdateEvent(db, event.ID, services.UpdateEventRequest{Capacity: &capacityTooLow})
+	mustErrorIs(t, err, services.ErrCapacityBelowTickets)
+}
+
+func TestEventResponseCountsOnlyActiveTicketsForSoldAndAvailability(t *testing.T) {
+	db := newTestDB(t)
+	userOne := createTestUser(t, db, func(user *domain.User) { user.Email = "sold-one@example.com" })
+	userTwo := createTestUser(t, db, func(user *domain.User) { user.Email = "sold-two@example.com" })
+	event := createTestEvent(t, db, func(event *domain.Event) { event.Capacity = 4 })
+	createTestTicket(t, db, userOne.ID, event.ID, "ACTIVE")
+	createTestTicket(t, db, userTwo.ID, event.ID, "CANCELLED")
+
+	response, err := services.GetEventByID(db, event.ID)
+
+	mustNoError(t, err)
+	mustEqual(t, 1, response.TicketsSold)
+	mustEqual(t, 3, response.AvailableCapacity)
+}

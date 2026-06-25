@@ -98,20 +98,19 @@ JWT_EXPIRATION_HOURS=24
 
 ## Testing backend
 
+Los tests automatizados del backend usan SQLite in-memory mediante helpers de GORM. No requieren MySQL ni Docker. El archivo `coverage.out` se genera localmente para analizar cobertura y no debe commitearse.
+
 ```bash
 cd backend
-go mod download
 go test ./...
-
-go test ./tests "-coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils" "-coverprofile=coverage.out"
-go tool cover "-func=coverage.out"
-
-$env:CGO_ENABLED="0"
-go test ./...
-go test ./tests "-coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils"
-Remove-Item Env:\CGO_ENABLED
-
-Remove-Item .\coverage.out -Force -ErrorAction SilentlyContinue
+go test ./... -cover
 ```
 
-Los tests de backend usan SQLite en memoria con un driver pure-Go, por lo que no dependen de una instancia MySQL real ni requieren CGO/gcc.
+Para medir cobertura real de los paquetes del backend desde la suite de tests:
+
+```bash
+cd backend
+go test ./tests -coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils -coverprofile=coverage.out
+go tool cover -func=coverage.out
+go tool cover -html=coverage.out
+```
