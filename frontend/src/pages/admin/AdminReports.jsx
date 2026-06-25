@@ -38,7 +38,7 @@ export default function AdminReports() {
   return <main className="px-5 py-8 lg:px-8">
     <p className="text-sm font-black uppercase tracking-[0.28em] text-ticket-purple2">Reportes</p>
     <h1 className="mt-2 text-4xl font-black">Estadísticas admin</h1>
-    <p className="mt-3 max-w-3xl text-gray-400">Métricas calculadas por el backend sobre usuarios, eventos, tickets activos y recaudación estimada.</p>
+    <p className="mt-3 max-w-3xl text-gray-400">Métricas de usuarios, eventos, entradas activas y recaudación estimada.</p>
 
     {error && <p className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-200">{error}</p>}
 

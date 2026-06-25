@@ -41,8 +41,6 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
         <div className="flex-1 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-2xl font-black">{ticket.event_title}</h3>{ticket.is_gift && <Badge tone="purple">Regalada</Badge>}</div><p className="mt-2 text-violet-200">{formatEventDate(ticket.event_start_date)} · {formatEventTime(ticket.event_start_date)}</p><p className="text-gray-400">{ticket.event_location}</p></div><Badge tone={isActive ? 'purple' : 'red'}>{ticket.status}</Badge></div>
           <div className="mt-5 grid gap-2 text-sm text-gray-400 sm:grid-cols-2">
-            <p>ID ticket: <span className="font-bold text-white">{ticket.id}</span></p>
-            <p>ID evento: <span className="font-bold text-white">{ticket.event_id}</span></p>
             <p>Compra: <span className="font-bold text-white">{formatEventDate(ticket.purchase_date)}</span></p>
             <p>Email: <span className="font-bold text-white">{ticket.user_email}</span></p>
             <p>Tipo: <span className="font-bold text-white">General</span></p>

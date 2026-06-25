@@ -123,6 +123,7 @@ Lista el catálogo público de eventos activos.
     "capacity": 100,
     "price": 15000,
     "available_capacity": 100,
+    "tickets_sold": 0,
     "active": true
   }
 ]
@@ -162,7 +163,7 @@ Devuelve el detalle público de un evento activo.
 - `404 Not Found`: el evento no existe o no está activo.
 - `500 Internal Server Error`: error interno.
 
-> `available_capacity` se calcula como `capacity` menos la cantidad de tickets asociados al evento con status `ACTIVE`.
+> `available_capacity` se calcula como `capacity` menos la cantidad de tickets asociados al evento con status `ACTIVE`. `tickets_sold` cuenta solamente tickets `ACTIVE`.
 
 ## Cliente
 
@@ -330,6 +331,42 @@ Los endpoints de administración requieren el header `Authorization: Bearer <tok
 
 > El usuario admin demo es solo para desarrollo local.
 
+### `GET /api/admin/events`
+
+Lista eventos para administración y mantiene los campos públicos de evento. Además incluye la cantidad de entradas vendidas y cupos disponibles.
+
+#### Response `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Rock Nacional",
+    "description": "Evento de música rock nacional.",
+    "image_url": "",
+    "category": "Música",
+    "location": "Córdoba",
+    "start_date": "2026-09-12T21:00:00Z",
+    "duration_minutes": 120,
+    "capacity": 100,
+    "price": 15000,
+    "available_capacity": 99,
+    "tickets_sold": 1,
+    "active": true
+  }
+]
+```
+
+- `tickets_sold` cuenta tickets `ACTIVE` del evento.
+- `available_capacity` se calcula como `capacity - tickets_sold`; si da negativo, devuelve `0`.
+- Los tickets `CANCELLED` no se cuentan como vendidos.
+
+#### Errores
+
+- `401 Unauthorized`: falta autenticación.
+- `403 Forbidden`: el usuario autenticado no tiene rol `ADMIN`.
+- `500 Internal Server Error`: error interno.
+
 ### `POST /api/admin/events`
 
 Crea un evento nuevo.
@@ -354,6 +391,7 @@ Crea un evento nuevo.
 #### Reglas
 
 - `title`, `description`, `category`, `location` y `start_date` son requeridos.
+- `category` debe ser una de: `Música`, `Teatro`, `Deportes`, `Tecnología`, `Otros`.
 - `duration_minutes` debe ser mayor a `0`.
 - `capacity` debe ser mayor a `0`.
 - `price` es opcional, queda en `0` si se omite y debe ser mayor o igual a `0`.
@@ -391,6 +429,7 @@ Actualiza parcialmente un evento existente.
 - Si se envía `duration_minutes`, debe ser mayor a `0`.
 - Si se envía `capacity`, debe ser mayor a `0`.
 - Si se envía `price`, debe ser mayor o igual a `0`.
+- Si se envía `category`, debe ser una de: `Música`, `Teatro`, `Deportes`, `Tecnología`, `Otros`.
 - `capacity` no puede ser menor que la cantidad de tickets `ACTIVE` vendidos para el evento.
 
 #### Response `200 OK`

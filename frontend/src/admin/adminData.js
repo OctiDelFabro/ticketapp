@@ -1,10 +1,13 @@
-export const baseCategories = ['Todas', 'Rock', 'Pop', 'Electrónica', 'Teatro', 'Deportes']
+import { adminEventCategoryFilters } from '../constants/eventCategories.js'
+
+export const baseCategories = adminEventCategoryFilters
 export const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
 export const normalizeEvent = (event = {}) => {
-  const sold = Number(event.sold_count ?? event.tickets_sold ?? event.sold ?? event.active_tickets ?? 0)
+  const sold = Number(event.tickets_sold ?? event.sold_count ?? event.sold ?? event.active_tickets ?? 0)
   const capacity = Number(event.capacity ?? 0)
+  const availableCapacity = Number(event.available_capacity ?? Math.max(capacity - sold, 0))
   const price = Number(event.price ?? event.ticket_price ?? 0)
-  return { ...event, sold_count: sold, capacity, price, occupation: capacity > 0 ? Math.round((sold / capacity) * 100) : 0 }
+  return { ...event, sold_count: sold, tickets_sold: sold, available_capacity: availableCapacity, capacity, price, occupation: capacity > 0 ? Math.round((sold / capacity) * 100) : 0 }
 }
 export const normalizeEvents = (events = []) => events.map(normalizeEvent)
 export const normalizeStatsEvent = (event = {}) => {

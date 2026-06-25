@@ -94,7 +94,7 @@ func handleAdminEventError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrEventNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-	case errors.Is(err, services.ErrInvalidEventRequest), errors.Is(err, services.ErrCapacityBelowTickets):
+	case errors.Is(err, services.ErrInvalidEventRequest), errors.Is(err, services.ErrInvalidEventCategory), errors.Is(err, services.ErrCapacityBelowTickets):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

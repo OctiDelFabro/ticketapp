@@ -65,8 +65,6 @@ export const cancelTicket = (ticketId) => request(`/tickets/${ticketId}/cancel`,
 export const transferTicket = (ticketId, targetEmail) => request(`/tickets/${ticketId}/transfer`, { method: 'PATCH', body: { target_email: targetEmail }, auth: true })
 
 
-// Admin endpoints expected by the forthcoming backend. getAdminEvents falls back to /events
-// so the admin shell can render read-only listings while /admin/events is unavailable.
 export const getAdminEvents = async (params) => {
   try {
     return normalizeListResponse(await request('/admin/events', { params, auth: true }), 'events')
