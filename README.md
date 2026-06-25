@@ -31,6 +31,52 @@ ticketapp/
 
 Para levantar el proyecto localmente con base MySQL, migraciones y datos demo reproducibles, seguí la guía de [setup local](docs/LOCAL_SETUP.md).
 
+
+## Docker
+
+### Requisitos
+
+- Docker
+- Docker Compose
+
+### Levantar el proyecto
+
+Desde la raíz del repositorio:
+
+```bash
+docker compose up --build
+```
+
+Este comando levanta MySQL, el backend Go/Gin y el frontend React/Vite servido con Nginx. No hace falta tener MySQL instalado localmente para usar Docker.
+
+### URLs y puertos
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8080/api/health`
+- MySQL desde el host: `localhost:3307`
+- MySQL dentro de Docker: `mysql:3306`
+
+Docker expone MySQL en el puerto `3307` del host para evitar conflictos si ya usás MySQL local en `3306`. Dentro de la red de Docker, el backend se conecta a `mysql:3306`.
+
+### Credenciales demo
+
+- `admin@test.com` / `123456`
+- `octavio@test.com` / `123456`
+- `lorenzo@test.com` / `123456`
+- `pablo@test.com` / `123456`
+
+### Comandos útiles
+
+```bash
+docker compose down
+docker compose down -v
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f mysql
+```
+
+`docker compose down -v` borra el volumen local de MySQL del contenedor y resetea la base de datos. Al iniciar, el backend crea, migra y siembra la base con datos demo reproducibles.
+
 ## Backend - ejecución local
 
 ```bash
