@@ -31,6 +31,20 @@ go tool cover "-func=coverage.out"
 - `coverage.out` es un artefacto local de medición y no debe commitearse.
 - La suite usa SQLite in-memory, por lo que no depende de MySQL ni de Docker para ejecutarse.
 
+## Testing frontend
+
+El frontend incorpora tests unitarios y de componentes con **Vitest**, **React Testing Library** y **jsdom**. La suite valida componentes de UI, guards de navegación admin y utilidades de imágenes sin depender del backend real.
+
+Comandos:
+
+```bash
+cd frontend
+npm install
+npm run test:run
+```
+
+Estos tests no requieren backend, MySQL, Docker ni Docker Compose. Cuando un componente necesita datos externos, se usan mocks de testing en lugar de servicios reales.
+
 ## Relación con Docker
 
 Docker Compose se usa para levantar el sistema completo en modo demo/desarrollo, pero no es requisito para correr los tests automatizados. Esto permite validar la suite en entornos locales o CI sin levantar servicios externos.

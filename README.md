@@ -47,6 +47,9 @@ La documentación complementaria se encuentra en `docs/`:
 - Go testing
 - `httptest`
 - SQLite in-memory
+- Vitest
+- React Testing Library
+- jsdom
 
 ## Requisitos previos
 
