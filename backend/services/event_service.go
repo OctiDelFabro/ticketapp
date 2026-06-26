@@ -1,0 +1,291 @@
+package services
+
+import (
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/OctiDelFabro/ticketapp/backend/dao"
+	"github.com/OctiDelFabro/ticketapp/backend/domain"
+	"gorm.io/gorm"
+)
+
+var (
+	ErrEventNotFound        = errors.New("event not found")
+	ErrInvalidEventRequest  = errors.New("invalid event request")
+	ErrCapacityBelowTickets = errors.New("capacity cannot be lower than active tickets sold")
+	ErrInvalidEventCategory = errors.New("category must be one of: Música, Teatro, Deportes, Tecnología, Otros")
+)
+
+var AllowedEventCategories = []string{"Música", "Teatro", "Deportes", "Tecnología", "Otros"}
+
+func IsAllowedEventCategory(category string) bool {
+	category = strings.TrimSpace(category)
+	for _, allowed := range AllowedEventCategories {
+		if category == allowed {
+			return true
+		}
+	}
+	return false
+}
+
+type EventResponse struct {
+	ID                uint      `json:"id"`
+	Title             string    `json:"title"`
+	Description       string    `json:"description"`
+	ImageURL          string    `json:"image_url"`
+	Category          string    `json:"category"`
+	Location          string    `json:"location"`
+	StartDate         time.Time `json:"start_date"`
+	DurationMinutes   int       `json:"duration_minutes"`
+	Capacity          int       `json:"capacity"`
+	Price             float64   `json:"price"`
+	AvailableCapacity int       `json:"available_capacity"`
+	TicketsSold       int       `json:"tickets_sold"`
+	Active            bool      `json:"active"`
+}
+
+type CreateEventRequest struct {
+	Title           string    `json:"title"`
+	Description     string    `json:"description"`
+	ImageURL        string    `json:"image_url"`
+	Category        string    `json:"category"`
+	Location        string    `json:"location"`
+	StartDate       time.Time `json:"start_date"`
+	DurationMinutes int       `json:"duration_minutes"`
+	Capacity        int       `json:"capacity"`
+	Price           float64   `json:"price"`
+	Active          *bool     `json:"active"`
+}
+
+type UpdateEventRequest struct {
+	Title           *string    `json:"title"`
+	Description     *string    `json:"description"`
+	ImageURL        *string    `json:"image_url"`
+	Category        *string    `json:"category"`
+	Location        *string    `json:"location"`
+	StartDate       *time.Time `json:"start_date"`
+	DurationMinutes *int       `json:"duration_minutes"`
+	Capacity        *int       `json:"capacity"`
+	Price           *float64   `json:"price"`
+	Active          *bool      `json:"active"`
+}
+
+func ListEvents(db *gorm.DB, filters dao.EventFilters) ([]EventResponse, error) {
+	events, err := dao.FindEvents(db, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]EventResponse, 0, len(events))
+	for _, event := range events {
+		response, err := buildEventResponse(db, event)
+		if err != nil {
+			return nil, err
+		}
+
+		responses = append(responses, response)
+	}
+
+	return responses, nil
+}
+
+func GetEventByID(db *gorm.DB, id uint) (*EventResponse, error) {
+	event, err := dao.FindEventByID(db, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrEventNotFound
+		}
+		return nil, err
+	}
+
+	response, err := buildEventResponse(db, *event)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+func CreateEvent(db *gorm.DB, req CreateEventRequest) (*EventResponse, error) {
+	req.Title = strings.TrimSpace(req.Title)
+	req.Description = strings.TrimSpace(req.Description)
+	req.Category = strings.TrimSpace(req.Category)
+	req.Location = strings.TrimSpace(req.Location)
+	req.ImageURL = strings.TrimSpace(req.ImageURL)
+
+	if req.Price < 0 {
+		return nil, ErrInvalidEventRequest
+	}
+
+	if req.Category == "" {
+		return nil, ErrInvalidEventRequest
+	}
+	if !IsAllowedEventCategory(req.Category) {
+		return nil, ErrInvalidEventCategory
+	}
+
+	if req.Title == "" || req.Description == "" || req.Location == "" || req.StartDate.IsZero() || req.DurationMinutes <= 0 || req.Capacity <= 0 {
+		return nil, ErrInvalidEventRequest
+	}
+
+	active := true
+	if req.Active != nil {
+		active = *req.Active
+	}
+
+	event := domain.Event{
+		Title:           req.Title,
+		Description:     req.Description,
+		ImageURL:        req.ImageURL,
+		Category:        req.Category,
+		Location:        req.Location,
+		StartDate:       req.StartDate,
+		DurationMinutes: req.DurationMinutes,
+		Capacity:        req.Capacity,
+		Price:           req.Price,
+		Active:          active,
+	}
+
+	if err := dao.CreateEvent(db, &event); err != nil {
+		return nil, err
+	}
+
+	response, err := buildEventResponse(db, event)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+func UpdateEvent(db *gorm.DB, id uint, req UpdateEventRequest) (*EventResponse, error) {
+	var updatedEvent domain.Event
+	err := db.Transaction(func(tx *gorm.DB) error {
+		event, err := dao.FindEventByIDIncludingInactive(tx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEventNotFound
+			}
+			return err
+		}
+
+		if req.Title != nil {
+			event.Title = strings.TrimSpace(*req.Title)
+		}
+		if req.Description != nil {
+			event.Description = strings.TrimSpace(*req.Description)
+		}
+		if req.ImageURL != nil {
+			event.ImageURL = strings.TrimSpace(*req.ImageURL)
+		}
+		if req.Category != nil {
+			event.Category = strings.TrimSpace(*req.Category)
+			if event.Category == "" {
+				return ErrInvalidEventRequest
+			}
+			if !IsAllowedEventCategory(event.Category) {
+				return ErrInvalidEventCategory
+			}
+		}
+		if req.Location != nil {
+			event.Location = strings.TrimSpace(*req.Location)
+		}
+		if req.StartDate != nil {
+			event.StartDate = *req.StartDate
+		}
+		if req.DurationMinutes != nil {
+			if *req.DurationMinutes <= 0 {
+				return ErrInvalidEventRequest
+			}
+			event.DurationMinutes = *req.DurationMinutes
+		}
+		if req.Capacity != nil {
+			if *req.Capacity <= 0 {
+				return ErrInvalidEventRequest
+			}
+
+			activeTickets, err := dao.CountActiveTicketsByEventID(tx, id)
+			if err != nil {
+				return err
+			}
+			if *req.Capacity < int(activeTickets) {
+				return ErrCapacityBelowTickets
+			}
+			event.Capacity = *req.Capacity
+		}
+		if req.Price != nil {
+			if *req.Price < 0 {
+				return ErrInvalidEventRequest
+			}
+			event.Price = *req.Price
+		}
+		if req.Active != nil {
+			event.Active = *req.Active
+		}
+
+		if event.Title == "" || event.Description == "" || event.Category == "" || event.Location == "" || event.StartDate.IsZero() {
+			return ErrInvalidEventRequest
+		}
+
+		if err := dao.UpdateEvent(tx, event); err != nil {
+			return err
+		}
+
+		updatedEvent = *event
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := buildEventResponse(db, updatedEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+func DisableEvent(db *gorm.DB, id uint) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		event, err := dao.FindEventByIDIncludingInactive(tx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrEventNotFound
+			}
+			return err
+		}
+
+		event.Active = false
+		return dao.UpdateEvent(tx, event)
+	})
+}
+
+func buildEventResponse(db *gorm.DB, event domain.Event) (EventResponse, error) {
+	ticketsSold, err := dao.CountActiveTicketsByEventID(db, event.ID)
+	if err != nil {
+		return EventResponse{}, err
+	}
+
+	availableCapacity := event.Capacity - int(ticketsSold)
+	if availableCapacity < 0 {
+		availableCapacity = 0
+	}
+
+	return EventResponse{
+		ID:                event.ID,
+		Title:             event.Title,
+		Description:       event.Description,
+		ImageURL:          event.ImageURL,
+		Category:          event.Category,
+		Location:          event.Location,
+		StartDate:         event.StartDate,
+		DurationMinutes:   event.DurationMinutes,
+		Capacity:          event.Capacity,
+		Price:             event.Price,
+		AvailableCapacity: availableCapacity,
+		TicketsSold:       int(ticketsSold),
+		Active:            event.Active,
+	}, nil
+}
