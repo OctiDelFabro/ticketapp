@@ -219,7 +219,7 @@ erDiagram
 
 Los tests automatizados del backend usan SQLite in-memory mediante helpers de GORM. No requieren MySQL ni Docker. El archivo `coverage.out` se genera localmente para analizar cobertura y no debe commitearse.
 
-Cobertura final validada localmente: **84.2%**.
+Cobertura final validada localmente: **83.9%**.
 
 ```bash
 cd backend
