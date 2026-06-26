@@ -197,7 +197,8 @@ func TestPublicEventsHTTPFiltersAndErrors(t *testing.T) {
 		event.Capacity = 1
 	})
 	createTestEvent(t, db, func(event *domain.Event) { event.Category = "Teatro" })
-	inactive := createTestEvent(t, db, func(event *domain.Event) { event.Active = false })
+	inactive := createTestEvent(t, db)
+	mustNoError(t, services.DisableEvent(db, inactive.ID))
 	user := createClientUser(t, db)
 	createTestTicket(t, db, user.ID, music.ID, "ACTIVE")
 	mustEqual(t, http.StatusOK, performJSONRequest(t, router, http.MethodGet, "/api/events?search=Searchable", nil).Code)
