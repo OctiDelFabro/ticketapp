@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-El proyecto incorpora pruebas automatizadas para validar la lógica principal del sistema y los endpoints HTTP del backend. Para la entrega final se validó localmente una cobertura de **84.2%**.
+El proyecto incorpora pruebas automatizadas para validar la lógica principal del sistema y los endpoints HTTP del backend. Para la entrega final se validó localmente una cobertura de **83.9%**.
 
 ## Estrategia
 
