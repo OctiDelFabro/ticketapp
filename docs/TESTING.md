@@ -27,7 +27,7 @@ go tool cover "-func=coverage.out"
 
 ## Coverage
 
-- Cobertura final validada localmente: **84.2%**.
+- Cobertura final validada localmente: **83.9%**.
 - `coverage.out` es un artefacto local de medición y no debe commitearse.
 - La suite usa SQLite in-memory, por lo que no depende de MySQL ni de Docker para ejecutarse.
 
