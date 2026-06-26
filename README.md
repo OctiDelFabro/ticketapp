@@ -106,11 +106,12 @@ go test ./...
 go test ./... -cover
 ```
 
-Para medir cobertura real de los paquetes del backend desde la suite de tests:
+Para medir cobertura real de los paquetes del backend desde la suite de tests en PowerShell, mantené el alcance completo de `-coverpkg` y no commitees `coverage.out`:
 
-```bash
+```powershell
 cd backend
-go test ./tests -coverpkg=./controllers,./services,./dao,./routes,./middlewares,./utils -coverprofile=coverage.out
-go tool cover -func=coverage.out
-go tool cover -html=coverage.out
+go test ./...
+go test ./... -cover
+go test ./tests "-coverpkg=github.com/OctiDelFabro/ticketapp/backend/controllers,github.com/OctiDelFabro/ticketapp/backend/services,github.com/OctiDelFabro/ticketapp/backend/dao,github.com/OctiDelFabro/ticketapp/backend/routes,github.com/OctiDelFabro/ticketapp/backend/middlewares,github.com/OctiDelFabro/ticketapp/backend/utils" "-coverprofile=coverage.out"
+go tool cover "-func=coverage.out"
 ```
