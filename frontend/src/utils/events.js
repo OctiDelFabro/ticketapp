@@ -36,6 +36,11 @@ export const formatDuration = (minutes) => {
   return remainingMinutes ? `${hours} h ${remainingMinutes} min` : `${hours} h`
 }
 
+export const isSupportedEventImageURL = (value) => {
+  const imageURL = String(value || '').trim()
+  return !imageURL || imageURL.startsWith('http://') || imageURL.startsWith('https://') || imageURL.startsWith('/')
+}
+
 export const getEventImage = (event) => event?.image_url || event?.image || fallbackEventImage
 
 export const normalizeCartEvent = (event) => ({

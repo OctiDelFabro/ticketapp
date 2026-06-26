@@ -1,4 +1,5 @@
 import Button from './Button.jsx'
+import EventImage from './EventImage.jsx'
 import { formatPrice, normalizePrice } from '../utils/formatters.js'
 
 export default function OrderSummary({ event, quantity = 1, mode = 'purchase', buttonText, onNext, onRemove, disabled = false }) {
@@ -27,7 +28,7 @@ export default function OrderSummary({ event, quantity = 1, mode = 'purchase', b
     <aside className="glass-card sticky top-24 rounded-3xl p-5">
       <h3 className="text-xl font-black">Resumen del pedido</h3>
       <div className="mt-5 flex gap-3">
-        <img src={event.image} alt={event.title} className="h-20 w-20 rounded-2xl object-cover" />
+        <EventImage event={event} alt={event.title} className="h-20 w-20 rounded-2xl object-cover" />
         <div>
           <p className="font-black">{event.title}</p>
           <p className="text-sm text-gray-400">{event.date}</p>

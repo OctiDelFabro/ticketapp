@@ -3,7 +3,8 @@ import AlertMessage from './AlertMessage.jsx'
 import Badge from './Badge.jsx'
 import Button from './Button.jsx'
 import { formatPrice } from '../utils/formatters.js'
-import { formatEventDate, formatEventTime, getEventImage } from '../utils/events.js'
+import EventImage from './EventImage.jsx'
+import { formatEventDate, formatEventTime } from '../utils/events.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -12,7 +13,6 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
   const [showTransfer, setShowTransfer] = useState(false)
   const [emailError, setEmailError] = useState('')
   const isActive = ticket.status === 'ACTIVE'
-  const imageSrc = getEventImage(ticket)
   const ticketPrice = ticket.event_price ?? ticket.event?.price
 
   const submitTransfer = () => {
@@ -37,7 +37,7 @@ export default function TicketCard({ ticket, onCancel, onTransfer, cancelling = 
   return (
     <article className="overflow-hidden rounded-3xl border border-ticket-border bg-ticket-card shadow-soft">
       <div className={`flex flex-col border-l-4 ${isActive ? 'border-ticket-purple' : 'border-gray-600'} sm:flex-row`}>
-        <img src={imageSrc} alt={ticket.event_title || 'Imagen del evento'} className="h-48 w-full object-cover sm:h-auto sm:w-44" />
+        <EventImage event={ticket} alt={ticket.event_title || 'Imagen del evento'} className="h-48 w-full object-cover sm:h-auto sm:w-44" />
         <div className="flex-1 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-2xl font-black">{ticket.event_title}</h3>{ticket.is_gift && <Badge tone="purple">Regalada</Badge>}</div><p className="mt-2 text-violet-200">{formatEventDate(ticket.event_start_date)} · {formatEventTime(ticket.event_start_date)}</p><p className="text-gray-400">{ticket.event_location}</p></div><Badge tone={isActive ? 'purple' : 'red'}>{ticket.status}</Badge></div>
           <div className="mt-5 grid gap-2 text-sm text-gray-400 sm:grid-cols-2">

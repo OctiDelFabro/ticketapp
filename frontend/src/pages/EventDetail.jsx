@@ -7,7 +7,8 @@ import { getEventById } from '../services/api.js'
 import { getStoredUser, isAuthenticated } from '../utils/auth.js'
 import { isAdminUser } from '../utils/admin.js'
 import { formatPrice } from '../utils/formatters.js'
-import { formatDuration, formatEventDate, formatEventTime, getEventImage, normalizeCartEvent } from '../utils/events.js'
+import EventImage from '../components/EventImage.jsx'
+import { formatDuration, formatEventDate, formatEventTime, normalizeCartEvent } from '../utils/events.js'
 
 export default function EventDetail({ onAddToCart }) {
   const { id } = useParams()
@@ -97,7 +98,7 @@ export default function EventDetail({ onAddToCart }) {
     <div className="bg-ticket-alt">
       <div className="container-page py-6"><button onClick={() => navigate('/')} className="rounded-2xl border border-ticket-border bg-ticket-card px-4 py-2 font-bold text-gray-200 transition hover:border-ticket-purple2">← Volver</button></div>
       <section className="relative -mt-20 h-[560px] overflow-hidden">
-        <img src={getEventImage(event)} alt={event.title} className="h-full w-full object-cover opacity-55" />
+        <EventImage event={event} alt={event.title} className="h-full w-full object-cover opacity-55" />
         <div className="absolute inset-0 bg-gradient-to-t from-ticket-alt via-ticket-alt/55 to-ticket-bg/40" />
       </section>
       <main className="container-page relative -mt-72">
@@ -120,7 +121,7 @@ export default function EventDetail({ onAddToCart }) {
                 <p>Entrada general: <b className="text-white">{formatPrice(event.price)}</b></p>
               </div>
             </section>
-            <section className="glass-card overflow-hidden rounded-3xl"><img src={getEventImage(event)} alt={event.location} className="h-64 w-full object-cover opacity-80" /><div className="p-6 sm:p-8"><h2 className="text-2xl font-black">Venue</h2><p className="mt-3 text-lg text-violet-200">{event.location}</p><p className="mt-1 text-gray-400">{formatEventDate(event.start_date)} · {formatEventTime(event.start_date)}</p></div></section>
+            <section className="glass-card overflow-hidden rounded-3xl"><EventImage event={event} alt={event.location} className="h-64 w-full object-cover opacity-80" /><div className="p-6 sm:p-8"><h2 className="text-2xl font-black">Venue</h2><p className="mt-3 text-lg text-violet-200">{event.location}</p><p className="mt-1 text-gray-400">{formatEventDate(event.start_date)} · {formatEventTime(event.start_date)}</p></div></section>
           </div>
 
           <aside className="h-fit rounded-3xl border border-ticket-purple2/35 bg-ticket-card p-6 shadow-glow lg:sticky lg:top-8">

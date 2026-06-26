@@ -29,6 +29,7 @@ func SeedEvents(db *gorm.DB) error {
 			Capacity:        100,
 			Price:           15000,
 			Active:          true,
+			ImageURL:        "https://www.radioarroba.com/uploads/programas/prog_19.jpg",
 		},
 		{
 			Title:           "Stand Up Night",
@@ -40,6 +41,7 @@ func SeedEvents(db *gorm.DB) error {
 			Capacity:        80,
 			Price:           8000,
 			Active:          true,
+			ImageURL:        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOIM2JuGPMAd6uQVVZj76xmiasIER1KYna9_Yy71jBMTFrPPhhw1WJt3w&s=10",
 		},
 		{
 			Title:           "Festival Tech",
@@ -51,6 +53,7 @@ func SeedEvents(db *gorm.DB) error {
 			Capacity:        150,
 			Price:           20000,
 			Active:          true,
+			ImageURL:        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw5R0c1lcDGldKt9vk9QabUM29bgsWgbqSr1-lhY-u8i5kfKJRUhTKwrU&s=10",
 		},
 		{
 			Title:           "Obra de Teatro",
@@ -62,6 +65,7 @@ func SeedEvents(db *gorm.DB) error {
 			Capacity:        60,
 			Price:           10000,
 			Active:          true,
+			ImageURL:        "https://www.artescondido.com/wp-content/uploads/2016/11/teatro.jpg",
 		},
 	}
 

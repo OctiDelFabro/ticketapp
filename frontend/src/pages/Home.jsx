@@ -5,7 +5,8 @@ import Button from '../components/Button.jsx'
 import EventCard from '../components/EventCard.jsx'
 import { eventCategoryFilters } from '../constants/eventCategories.js'
 import { getEvents } from '../services/api.js'
-import { formatEventDate, formatEventTime, getEventImage } from '../utils/events.js'
+import EventImage from '../components/EventImage.jsx'
+import { formatEventDate, formatEventTime } from '../utils/events.js'
 
 const categories = eventCategoryFilters
 
@@ -41,7 +42,7 @@ export default function Home({ searchQuery = '' }) {
     <div>
       <main className="container-page py-8">
         <section className="relative overflow-hidden rounded-[2rem] border border-ticket-purple2/30 bg-ticket-card shadow-glow">
-          {featured && <img src={getEventImage(featured)} alt={featured.title} className="absolute inset-0 h-full w-full object-cover opacity-45" />}
+          {featured && <EventImage event={featured} alt={featured.title} className="absolute inset-0 h-full w-full object-cover opacity-45" />}
           <div className="absolute inset-0 bg-gradient-to-r from-ticket-bg via-ticket-bg/80 to-transparent" />
           <div className="relative max-w-3xl p-8 sm:p-12 lg:p-16">
             <div className="flex flex-wrap gap-3"><Badge>Destacado</Badge></div>
