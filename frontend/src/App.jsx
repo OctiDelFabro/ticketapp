@@ -13,7 +13,8 @@ import AdminRoute from './admin/AdminRoute.jsx'
 import AdminEvents from './pages/admin/AdminEvents.jsx'
 import AdminReports from './pages/admin/AdminReports.jsx'
 import AdminReportDetail from './pages/admin/AdminReportDetail.jsx'
-import { clearAuthSession, isAuthenticated } from './utils/auth.js'
+import { clearAuthSession, getStoredUser, isAuthenticated } from './utils/auth.js'
+import { isAdminUser } from './utils/admin.js'
 import { getStoredCart, saveStoredCart } from './utils/cart.js'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const isAdminPath = location.pathname.startsWith('/admin')
+  const isAdmin = isAdminUser(getStoredUser())
 
   const handleLogout = () => {
     clearAuthSession()
@@ -39,6 +41,7 @@ export default function App() {
     <div className="app-shell">
       {!isAdminPath && <Header
         cartCount={cartItem?.quantity ?? 0}
+        isAdmin={isAdmin}
         isLoggedIn={isLoggedIn}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -48,8 +51,8 @@ export default function App() {
         <Route path="/" element={<Home searchQuery={searchQuery} />} />
         <Route path="/evento/:id" element={<EventDetail onAddToCart={setCartItem} />} />
         <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
-        <Route path="/checkout" element={<Checkout cartItem={cartItem} setCartItem={setCartItem} />} />
-        <Route path="/mis-entradas" element={<MyTickets isLoggedIn={isLoggedIn} />} />
+        <Route path="/checkout" element={<Checkout cartItem={cartItem} isAdmin={isAdmin} setCartItem={setCartItem} />} />
+        <Route path="/mis-entradas" element={<MyTickets isAdmin={isAdmin} isLoggedIn={isLoggedIn} />} />
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route path="eventos" element={<AdminEvents />} />
           <Route path="eventos/nuevo" element={<AdminEvents />} />
@@ -59,7 +62,7 @@ export default function App() {
         </Route>
       </Routes>
       {!isAdminPath && <Footer />}
-      {!isAdminPath && <BottomNav isLoggedIn={isLoggedIn} onLogout={handleLogout} />}
+      {!isAdminPath && <BottomNav isAdmin={isAdmin} isLoggedIn={isLoggedIn} onLogout={handleLogout} />}
     </div>
   )
 }

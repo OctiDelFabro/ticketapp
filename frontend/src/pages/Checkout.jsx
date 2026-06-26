@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AlertMessage from '../components/AlertMessage.jsx'
 import Button from '../components/Button.jsx'
@@ -6,6 +6,7 @@ import CheckoutProgress from '../components/CheckoutProgress.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import { giftTicket, purchaseTicket } from '../services/api.js'
 import { getStoredUser, isAuthenticated } from '../utils/auth.js'
+import { isAdminUser } from '../utils/admin.js'
 import { formatPrice } from '../utils/formatters.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -19,7 +20,7 @@ const friendlyPurchaseError = (message, isGift = false) => {
 }
 
 
-export default function Checkout({ cartItem, setCartItem }) {
+export default function Checkout({ cartItem, isAdmin = false, setCartItem }) {
   const [step, setStep] = useState(1)
   const [payment, setPayment] = useState('Crédito')
   const storedUser = getStoredUser()
@@ -40,6 +41,10 @@ export default function Checkout({ cartItem, setCartItem }) {
   const quantity = isGift ? 1 : (cartItem?.quantity ?? 1)
   const eventPath = event ? `/evento/${event.id}` : '/'
   const isConfirmedGift = confirmedMode === 'gift'
+
+  useEffect(() => {
+    if (isAdmin || isAdminUser(storedUser)) navigate('/admin/eventos', { replace: true })
+  }, [isAdmin, navigate, storedUser])
 
   const updateCustomer = (field, value) => {
     setCustomer((current) => ({ ...current, [field]: value }))
@@ -90,6 +95,11 @@ export default function Checkout({ cartItem, setCartItem }) {
   }
 
   const confirmPurchase = async () => {
+    if (isAdmin || isAdminUser(storedUser)) {
+      navigate('/admin/eventos', { replace: true })
+      return
+    }
+
     if (!isAuthenticated()) {
       navigate('/login', { state: { message: 'Necesitás iniciar sesión para comprar una entrada.' } })
       return

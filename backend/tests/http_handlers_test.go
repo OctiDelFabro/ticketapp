@@ -148,3 +148,41 @@ func TestTicketAuthenticatedHTTPFlow(t *testing.T) {
 	mustEqual(t, float64(target.ID), transferBody["user_id"])
 	mustEqual(t, "ACTIVE", transferBody["status"])
 }
+
+func TestAdminCannotUseTicketEndpoints(t *testing.T) {
+	db := newTestDB(t)
+	router := newTestRouter(t, db)
+	admin := createTestUser(t, db, func(user *domain.User) {
+		user.Email = "admin-ticket-blocked@example.com"
+		user.Role = "ADMIN"
+	})
+	event := createTestEvent(t, db)
+
+	response := performJSONRequest(t, router, http.MethodPost, "/api/tickets/purchase", map[string]any{"event_id": event.ID, "quantity": 1}, authHeader(t, admin))
+
+	mustEqual(t, http.StatusForbidden, response.Code)
+}
+
+func TestClientPassesTicketRoleMiddleware(t *testing.T) {
+	db := newTestDB(t)
+	router := newTestRouter(t, db)
+	client := createTestUser(t, db, func(user *domain.User) { user.Email = "client-ticket-allowed@example.com" })
+	event := createTestEvent(t, db)
+
+	response := performJSONRequest(t, router, http.MethodPost, "/api/tickets/purchase", map[string]any{"event_id": event.ID, "quantity": 1}, authHeader(t, client))
+
+	mustEqual(t, http.StatusCreated, response.Code)
+}
+
+func TestAdminCanStillUseAdminEndpoints(t *testing.T) {
+	db := newTestDB(t)
+	router := newTestRouter(t, db)
+	admin := createTestUser(t, db, func(user *domain.User) {
+		user.Email = "admin-still-allowed@example.com"
+		user.Role = "ADMIN"
+	})
+
+	response := performJSONRequest(t, router, http.MethodGet, "/api/admin/stats/summary", nil, authHeader(t, admin))
+
+	mustEqual(t, http.StatusOK, response.Code)
+}

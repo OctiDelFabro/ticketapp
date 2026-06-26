@@ -4,7 +4,8 @@ import AlertMessage from '../components/AlertMessage.jsx'
 import Badge from '../components/Badge.jsx'
 import Button from '../components/Button.jsx'
 import { getEventById } from '../services/api.js'
-import { isAuthenticated } from '../utils/auth.js'
+import { getStoredUser, isAuthenticated } from '../utils/auth.js'
+import { isAdminUser } from '../utils/admin.js'
 import { formatPrice } from '../utils/formatters.js'
 import { formatDuration, formatEventDate, formatEventTime, getEventImage, normalizeCartEvent } from '../utils/events.js'
 
@@ -47,6 +48,11 @@ export default function EventDetail({ onAddToCart }) {
   }
 
   const checkout = () => {
+    if (isAdminUser(getStoredUser())) {
+      navigate('/admin/eventos')
+      return
+    }
+
     if (!isAuthenticated()) {
       navigate('/login', { state: { message: 'Necesitás iniciar sesión para comprar una entrada.' } })
       return
@@ -57,6 +63,11 @@ export default function EventDetail({ onAddToCart }) {
   }
 
   const gift = () => {
+    if (isAdminUser(getStoredUser())) {
+      navigate('/admin/eventos')
+      return
+    }
+
     if (!isAuthenticated()) {
       navigate('/login', { state: { message: 'Necesitás iniciar sesión para regalar una entrada.' } })
       return
@@ -124,7 +135,14 @@ export default function EventDetail({ onAddToCart }) {
               <div className="flex justify-between text-xl font-black"><span>Total</span><span>{formatPrice((Number(event.price) || 0) * selectedQuantity)}</span></div>
               <div className="flex justify-between text-xl font-black"><span>Disponibles</span><span>{event.available_capacity}</span></div>
             </div>
-            <div className="grid gap-3"><Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><Button onClick={gift} className="w-full" variant="secondary" disabled={event.available_capacity <= 0}>Regalar entrada</Button></div><p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
+            {isAdminUser(getStoredUser()) ? (
+              <div className="rounded-2xl border border-ticket-border bg-ticket-card2 p-4 text-center text-sm font-bold text-gray-300">
+                Las cuentas administradoras gestionan eventos desde el panel y no pueden comprar ni regalar entradas.
+                <Button to="/admin/eventos" className="mt-4 w-full">Ir al panel admin</Button>
+              </div>
+            ) : (
+              <div className="grid gap-3"><Button onClick={checkout} className="w-full" disabled={event.available_capacity <= 0}>Comprar ahora →</Button><Button onClick={gift} className="w-full" variant="secondary" disabled={event.available_capacity <= 0}>Regalar entrada</Button></div>
+            )}<p className="mt-4 text-center text-xs text-gray-500">Compra 100% segura · Tipo General</p>
           </aside>
         </div>
       </main>
