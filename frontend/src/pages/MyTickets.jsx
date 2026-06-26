@@ -5,13 +5,14 @@ import Button from '../components/Button.jsx'
 import TicketCard from '../components/TicketCard.jsx'
 import { cancelTicket, getMyTickets, transferTicket } from '../services/api.js'
 import { getStoredUser } from '../utils/auth.js'
+import { isAdminUser } from '../utils/admin.js'
 
 const withFallbackError = (message, fallback) => {
   if (!message || message.length > 120) return fallback
   return `${fallback} ${message}`
 }
 
-export default function MyTickets({ isLoggedIn }) {
+export default function MyTickets({ isAdmin = false, isLoggedIn }) {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,7 +24,7 @@ export default function MyTickets({ isLoggedIn }) {
   const user = getStoredUser()
 
   const loadTickets = async () => {
-    if (!isLoggedIn) return
+    if (!isLoggedIn || isAdmin || isAdminUser(user)) return
     setLoading(true)
     setError('')
     try {
@@ -37,8 +38,12 @@ export default function MyTickets({ isLoggedIn }) {
   }
 
   useEffect(() => {
+    if (isAdmin || isAdminUser(user)) {
+      navigate('/admin/eventos', { replace: true })
+      return
+    }
     loadTickets()
-  }, [isLoggedIn])
+  }, [isAdmin, isLoggedIn, navigate])
 
   const initials = useMemo(() => {
     const name = user?.name || user?.email || 'TU'
