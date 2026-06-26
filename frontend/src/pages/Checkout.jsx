@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import AlertMessage from '../components/AlertMessage.jsx'
 import Button from '../components/Button.jsx'
 import CheckoutProgress from '../components/CheckoutProgress.jsx'
+import EventImage from '../components/EventImage.jsx'
 import OrderSummary from '../components/OrderSummary.jsx'
 import { giftTicket, purchaseTicket } from '../services/api.js'
 import { getStoredUser, isAuthenticated } from '../utils/auth.js'
@@ -183,7 +184,7 @@ export default function Checkout({ cartItem, isAdmin = false, setCartItem }) {
                 <>
                   <div className="glass-card rounded-3xl p-5">
                     <div className="flex flex-col gap-5 sm:flex-row">
-                      <img src={event.image} alt={event.title} className="h-44 rounded-2xl object-cover sm:w-60" />
+                      <EventImage event={event} alt={event.title} className="h-44 rounded-2xl object-cover sm:w-60" />
                       <div>
                         <BadgeLine text="Evento seleccionado" />
                         <h2 className="mt-2 text-3xl font-black">{event.title}</h2>
