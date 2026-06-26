@@ -65,7 +65,7 @@ func SeedEvents(db *gorm.DB) error {
 			Capacity:        60,
 			Price:           10000,
 			Active:          true,
-			ImageURL:        "https://www.artescondido.com/wp-content/uploads/2016/11/teatro.jpg",
+			ImageURL:        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5Wal0Gv92H8dbY5MOL7FZlyzWzFkO23E91sG8mT9g9A&s=10",
 		},
 	}
 
